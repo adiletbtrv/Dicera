@@ -69,11 +69,22 @@ router.get('/:id', requireAuth, async (req, res, next) => {
       [req.params['id'], req.user!.id],
     );
     if (!campaign) throw new ApiError(404, 'Campaign not found');
-    res.json(campaign);
+
+    const [npcRows, sessionRows] = await Promise.all([
+      query('SELECT id, name, occupation AS role, description FROM npcs WHERE campaign_id = $1 ORDER BY name ASC', [req.params['id']]),
+      query('SELECT id, title, session_number, date_played AS date, summary FROM session_notes WHERE campaign_id = $1 ORDER BY session_number ASC', [req.params['id']]),
+    ]);
+
+    res.json({
+      ...campaign,
+      npcs: npcRows.rows,
+      sessions: sessionRows.rows,
+    });
   } catch (err) {
     next(err);
   }
 });
+
 
 router.post('/', requireAuth, async (req, res, next) => {
   try {
@@ -218,6 +229,26 @@ router.post('/:id/sessions', requireAuth, async (req, res, next) => {
     );
 
     res.status(201).json({ id: sessionId });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete('/:id/npcs/:npcId', requireAuth, async (req, res, next) => {
+  try {
+    await assertCampaignOwner(req.params['id']!, req.user!.id);
+    await query('DELETE FROM npcs WHERE id = $1 AND campaign_id = $2', [req.params['npcId'], req.params['id']]);
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete('/:id/sessions/:sessionId', requireAuth, async (req, res, next) => {
+  try {
+    await assertCampaignOwner(req.params['id']!, req.user!.id);
+    await query('DELETE FROM session_notes WHERE id = $1 AND campaign_id = $2', [req.params['sessionId'], req.params['id']]);
+    res.status(204).send();
   } catch (err) {
     next(err);
   }

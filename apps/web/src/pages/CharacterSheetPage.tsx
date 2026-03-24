@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api.js';
-import { ChevronLeft, Edit, Shield, Heart, Zap, Award } from 'lucide-react';
+import { ChevronLeft, Shield, Heart, Zap, Award, Scroll, Swords, Edit2, Check, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { abilityModifier, formatModifier, capitalize } from '@/lib/utils.js';
+import { useToastStore } from '@/store/toast.js';
 
 interface DbCharacter {
   id: string;
@@ -18,154 +21,302 @@ interface DbCharacter {
   armor_class: number;
   speed: number;
   proficiency_bonus: number;
+  spell_slots?: { level: number; total: number; used: number }[];
+  saving_throw_proficiencies?: string[];
+  skill_proficiencies?: string[];
+  features?: { name: string; description: string }[];
+  notes?: string;
   avatar_url?: string;
+}
+
+const ABILITY_KEYS = ['str', 'dex', 'con', 'int', 'wis', 'cha'] as const;
+const SKILLS = [
+  { name: 'Acrobatics', ability: 'dex' },
+  { name: 'Animal Handling', ability: 'wis' },
+  { name: 'Arcana', ability: 'int' },
+  { name: 'Athletics', ability: 'str' },
+  { name: 'Deception', ability: 'cha' },
+  { name: 'History', ability: 'int' },
+  { name: 'Insight', ability: 'wis' },
+  { name: 'Intimidation', ability: 'cha' },
+  { name: 'Investigation', ability: 'int' },
+  { name: 'Medicine', ability: 'wis' },
+  { name: 'Nature', ability: 'int' },
+  { name: 'Perception', ability: 'wis' },
+  { name: 'Performance', ability: 'cha' },
+  { name: 'Persuasion', ability: 'cha' },
+  { name: 'Religion', ability: 'int' },
+  { name: 'Sleight of Hand', ability: 'dex' },
+  { name: 'Stealth', ability: 'dex' },
+  { name: 'Survival', ability: 'wis' },
+] as const;
+
+const SAVE_ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
+const TABS = ['Overview', 'Skills', 'Spells', 'Features', 'Notes'] as const;
+type Tab = (typeof TABS)[number];
+
+function HpBar({ current, max }: { current: number; max: number }) {
+  const pct = Math.max(0, Math.min(100, (current / max) * 100));
+  const color = pct >= 60 ? '#22c55e' : pct >= 30 ? 'var(--gold)' : 'var(--dragon)';
+  return (
+    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--surface-raised)' }}>
+      <motion.div animate={{ width: `${pct}%` }} transition={{ duration: 0.5 }} className="h-full rounded-full" style={{ background: color }} />
+    </div>
+  );
 }
 
 export function CharacterSheetPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data, isLoading } = useQuery({ 
-    queryKey: ['character', id], 
-    queryFn: () => api.get<DbCharacter>(`/characters/${id}`), 
-    enabled: !!id 
+  const qc = useQueryClient();
+  const toast = useToastStore((s) => s.add);
+  const [activeTab, setActiveTab] = useState<Tab>('Overview');
+  const [editHp, setEditHp] = useState(false);
+  const [hpInput, setHpInput] = useState('');
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['character', id],
+    queryFn: () => api.get<DbCharacter>(`/characters/${id}`),
+    enabled: !!id,
   });
 
-  if (isLoading) return <div className="text-center py-12 font-ui" style={{ color: 'var(--text-muted)' }}>Weaving the threads of destiny...</div>;
-  if (!data) return <div className="text-center py-12 font-ui" style={{ color: 'var(--dragon)' }}>Hero forsaken. Character not found.</div>;
+  const updateHpMut = useMutation({
+    mutationFn: (hp: number) => api.patch(`/characters/${id}`, { current_hit_points: hp }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['character', id] });
+      setEditHp(false);
+      toast({ type: 'success', message: 'HP updated', duration: 2000 });
+    },
+    onError: () => toast({ type: 'error', message: 'Failed to update HP', duration: 3000 }),
+  });
 
-  const charClassStr = data.classes?.map(c => `${c.class_name} ${c.level}`).join(' / ') || 'Unknown Class';
-  const stats = data.ability_scores || { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 };
+  if (isLoading) return <div className="text-center py-12 font-ui" style={{ color: 'var(--text-muted)' }}>Loading character...</div>;
+  if (!data) return <div className="text-center py-12 font-ui" style={{ color: 'var(--dragon)' }}>Character not found.</div>;
 
-  const STATS_UI = [
-    { key: 'str', label: 'STR' },
-    { key: 'dex', label: 'DEX' },
-    { key: 'con', label: 'CON' },
-    { key: 'int', label: 'INT' },
-    { key: 'wis', label: 'WIS' },
-    { key: 'cha', label: 'CHA' },
-  ] as const;
+  const stats = data.ability_scores ?? { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 };
+  const charClassStr = data.classes?.map((c) => `${c.class_name} ${c.level}`).join(' / ') ?? 'Unknown';
+  const prof = data.proficiency_bonus ?? 2;
+  const skillProfs = new Set((data.skill_proficiencies ?? []).map((s) => s.toLowerCase()));
+  const saveProfs = new Set((data.saving_throw_proficiencies ?? []).map((s) => s.toLowerCase()));
+  const spellSlots = data.spell_slots?.filter((s) => s.total > 0) ?? [];
+
+  function skillBonus(skillName: string, abilityKey: typeof ABILITY_KEYS[number]) {
+    const mod = abilityModifier(stats[abilityKey] ?? 10);
+    const isProficient = skillProfs.has(skillName.toLowerCase());
+    return mod + (isProficient ? prof : 0);
+  }
+
+  function saveBonus(ability: string) {
+    const mod = abilityModifier(stats[ability as keyof typeof stats] ?? 10);
+    return mod + (saveProfs.has(ability.toLowerCase()) ? prof : 0);
+  }
 
   return (
-    <div className="max-w-6xl mx-auto pb-20 relative">
-      <div className="absolute inset-0 pointer-events-none opacity-20" style={{ background: 'radial-gradient(circle at top right, var(--accent) 0%, transparent 40%)' }}></div>
-      <button onClick={() => navigate('/characters')} className="btn-ghost mb-6 flex items-center gap-1 z-10 relative">
+    <div className="max-w-6xl mx-auto pb-20">
+      <div className="absolute inset-0 pointer-events-none opacity-20" style={{ background: 'radial-gradient(circle at top right, var(--accent) 0%, transparent 40%)' }} />
+
+      <button onClick={() => navigate('/characters')} className="btn-ghost mb-6 flex items-center gap-1">
         <ChevronLeft className="w-4 h-4" /> Characters
       </button>
 
-
-      <div className="relative rounded-3xl p-8 mb-8 overflow-hidden shadow-2xl" style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-strong)' }}>
-        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl mix-blend-screen pointer-events-none"></div>
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 relative z-10">
-          <div className="space-y-2">
-            <h1 className="font-heading font-black text-5xl md:text-6xl tracking-tight" style={{
-              background: 'linear-gradient(135deg, var(--accent) 0%, #ddd6fe 50%, var(--gold2, #fbbf24) 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              filter: 'drop-shadow(0 0 24px rgba(139,92,246,0.3))'
-            }}>
+      {/* Hero Header */}
+      <div className="relative rounded-3xl p-8 mb-6 overflow-hidden shadow-2xl" style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-strong)' }}>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 relative z-10">
+          <div>
+            <h1 className="font-heading font-black text-5xl tracking-tight" style={{ background: 'linear-gradient(135deg, var(--accent) 0%, #ddd6fe 50%, var(--gold2) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               {data.name}
             </h1>
-            <p className="font-montserrat text-xs md:text-sm font-bold tracking-[0.2em] uppercase" style={{ color: 'var(--text-muted)' }}>
-              Level <span style={{ color: 'var(--accent)' }}>{data.total_level}</span> {data.race_name} <span style={{ color: 'var(--text-secondary)' }}>•</span> {charClassStr} <span style={{ color: 'var(--text-secondary)' }}>•</span> {data.background_name}
+            <p className="text-sm font-ui font-bold tracking-widest uppercase mt-1" style={{ color: 'var(--text-muted)' }}>
+              Level <span style={{ color: 'var(--accent)' }}>{data.total_level}</span> {data.race_name} &bull; {charClassStr} &bull; {data.background_name}
             </p>
           </div>
-          <div>
-            <button onClick={() => navigate(`/characters/${id}/edit`)} className="btn-secondary flex items-center gap-2 px-6 py-2.5 shadow-lg relative overflow-hidden group">
-              <div className="absolute inset-0 bg-white/5 w-0 group-hover:w-full transition-all duration-300"></div>
-              <Edit className="w-4 h-4" /> <span>Edit Setup</span>
-            </button>
-          </div>
+          <button onClick={() => navigate(`/characters/${id}/edit`)} className="btn-secondary flex items-center gap-2">
+            <Edit2 className="w-4 h-4" /> Edit
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-
-        <div className="lg:col-span-4 space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-
-            <div className="rounded-2xl p-5 text-center flex flex-col items-center justify-center transition-all duration-300 hover:border-[var(--accent)] hover:shadow-[0_0_16px_rgba(139,92,246,0.2)]" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-              <Shield className="w-6 h-6 mb-2" style={{ color: 'var(--text-muted)' }} />
-              <span className="font-rubik font-black text-5xl" style={{ color: 'var(--text-primary)' }}>{data.armor_class ?? 10}</span>
-              <span className="font-montserrat text-xs font-bold tracking-[0.15em] uppercase mt-2" style={{ color: 'var(--text-muted)' }}>Armor Class</span>
-            </div>
-            
-
-            <div className="rounded-2xl p-5 text-center flex flex-col items-center justify-center transition-all duration-300 hover:border-[var(--accent)] hover:shadow-[0_0_16px_rgba(139,92,246,0.2)]" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-              <Heart className="w-6 h-6 mb-2" style={{ color: 'var(--dragon, #ef4444)' }} />
-              <span className="font-rubik font-black text-5xl" style={{ color: 'var(--dragon, #ef4444)' }}>{data.current_hit_points ?? 10}</span>
-              <span className="font-ui text-sm font-medium mt-1" style={{ color: 'var(--text-secondary)' }}>/ {data.max_hit_points ?? 10} Max</span>
-              <span className="font-montserrat text-xs font-bold tracking-[0.15em] uppercase mt-2" style={{ color: 'var(--text-muted)' }}>Hit Points</span>
-            </div>
-            
-
-            <div className="rounded-2xl p-4 text-center transition-all duration-300 col-span-2 flex justify-around" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-              <div>
-                <span className="font-rubik font-bold text-2xl pb-1 block" style={{ color: 'var(--text-primary)' }}>{data.speed ?? 30} <span className="text-sm font-normal text-[var(--text-muted)]">ft</span></span>
-                <span className="font-montserrat text-[0.65rem] font-bold tracking-widest uppercase" style={{ color: 'var(--text-muted)' }}>Walking Speed</span>
-              </div>
-              <div className="w-px bg-[var(--border)]"></div>
-              <div>
-                <span className="font-rubik font-bold text-2xl pb-1 block" style={{ color: 'var(--text-primary)' }}>{formatModifier(abilityModifier(stats.dex ?? 10))}</span>
-                <span className="font-montserrat text-[0.65rem] font-bold tracking-widest uppercase" style={{ color: 'var(--text-muted)' }}>Initiative</span>
-              </div>
-              <div className="w-px bg-[var(--border)]"></div>
-              <div>
-                <span className="font-rubik font-bold text-2xl pb-1 block" style={{ color: 'var(--accent)' }}>+{data.proficiency_bonus ?? 2}</span>
-                <span className="font-montserrat text-[0.65rem] font-bold tracking-widest uppercase" style={{ color: 'var(--text-muted)' }}>Proficiency</span>
-              </div>
-            </div>
+      {/* Combat Stats Row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        {[
+          { icon: Shield, label: 'Armor Class', value: data.armor_class ?? 10, color: 'var(--teal)' },
+          { icon: Zap, label: 'Initiative', value: formatModifier(abilityModifier(stats.dex ?? 10)), color: 'var(--gold)' },
+          { icon: Award, label: 'Proficiency', value: `+${prof}`, color: 'var(--accent)' },
+        ].map(({ icon: Icon, label, value, color }) => (
+          <div key={label} className="card text-center py-5">
+            <Icon className="w-5 h-5 mx-auto mb-2" style={{ color }} />
+            <p className="font-heading font-black text-4xl" style={{ color: 'var(--text-primary)' }}>{value}</p>
+            <p className="text-xs font-ui uppercase tracking-wider mt-1" style={{ color: 'var(--text-muted)' }}>{label}</p>
           </div>
-
-          <div className="rounded-2xl p-6 shadow-sm" style={{ background: 'var(--surface)', border: '1px solid var(--border-subtle)' }}>
-             <h3 className="font-montserrat text-xs font-bold tracking-widest uppercase mb-4 pb-2 border-b" style={{ color: 'var(--accent)', borderColor: 'var(--border)' }}>Personality & Background</h3>
-             <div className="space-y-3 font-ui text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-               <p><strong style={{ color: 'var(--text-primary)' }}>Alignment:</strong> {capitalize(data.alignment ?? 'Unaligned')}</p>
-               <p><strong style={{ color: 'var(--text-primary)' }}>Background Info:</strong> Character data is largely structural at the moment. When integrated with full narrative notes, ideals, bonds, and flaws will manifest here.</p>
-             </div>
+        ))}
+        <div className="card py-5">
+          <Heart className="w-5 h-5 mx-auto mb-2" style={{ color: 'var(--dragon)' }} />
+          <div className="flex items-center justify-center gap-1">
+            {editHp ? (
+              <>
+                <input autoFocus type="number" className="input text-center font-heading font-black text-2xl w-20 p-1" defaultValue={data.current_hit_points} onChange={(e) => setHpInput(e.target.value)} />
+                <button onClick={() => updateHpMut.mutate(parseInt(hpInput || String(data.current_hit_points)))} className="p-1 rounded-lg text-green-400"><Check className="w-4 h-4" /></button>
+                <button onClick={() => setEditHp(false)} className="p-1 rounded-lg" style={{ color: 'var(--text-muted)' }}><X className="w-4 h-4" /></button>
+              </>
+            ) : (
+              <button onClick={() => { setEditHp(true); setHpInput(String(data.current_hit_points)); }} className="flex items-center gap-1 group">
+                <p className="font-heading font-black text-4xl" style={{ color: 'var(--dragon)' }}>{data.current_hit_points}</p>
+                <span style={{ color: 'var(--text-muted)' }}>/{data.max_hit_points}</span>
+              </button>
+            )}
           </div>
+          <HpBar current={data.current_hit_points ?? 0} max={data.max_hit_points ?? 1} />
+          <p className="text-xs font-ui uppercase tracking-wider mt-2 text-center" style={{ color: 'var(--text-muted)' }}>Hit Points</p>
         </div>
-
-
-        <div className="lg:col-span-8 flex flex-col gap-6">
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            {STATS_UI.map(({ key, label }) => {
-              const score = stats[key as keyof typeof stats] ?? 10;
-              const mod = abilityModifier(score);
-              return (
-                <div key={key} className="rounded-xl flex flex-col items-center p-4 transition-all duration-200 hover:border-purple-500/50 hover:-translate-y-1 cursor-default group" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                  <span className="font-montserrat text-xs font-black tracking-[0.2em] mb-2 group-hover:text-purple-400 transition-colors" style={{ color: 'var(--text-muted)' }}>{label}</span>
-                  <span className="font-rubik font-black text-4xl mb-1" style={{ color: 'var(--text-primary)' }}>{score}</span>
-                  <div className={`font-ui font-bold text-sm px-2.5 py-0.5 rounded-full ${mod >= 0 ? 'bg-teal-500/10 text-teal-400' : 'bg-red-500/10 text-red-400'}`}>
-                    {formatModifier(mod)}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-
-          <div className="rounded-2xl flex-1 flex flex-col overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border-strong)' }}>
-            <div className="pt-5 px-6 pb-4 border-b flex items-center gap-2" style={{ borderColor: 'var(--border)' }}>
-               <Award className="w-4 h-4" style={{ color: 'var(--accent)' }}/>
-               <h3 className="font-montserrat text-xs font-bold tracking-[0.2em] uppercase" style={{ color: 'var(--accent)' }}>Active Features & Traits</h3>
-            </div>
-            <div className="p-6 font-ui text-sm text-[var(--text-secondary)]">
-              <p className="italic pb-4">No features imported or manually recorded yet. The character currently relies entirely on their raw stats and basic attacks.</p>
-             
-              <div className="mt-4 p-4 rounded-xl border border-dashed border-[var(--border-strong)] bg-purple-500/5">
-                <div className="flex items-center gap-2 mb-2">
-                  <Zap className="w-4 h-4 text-purple-400" />
-                  <h4 className="font-bold text-[var(--text-primary)]">Developer Note: Import Connectivity</h4>
-                </div>
-                <p>The layout and architecture has been overhauled to support the Amon Fudo theme (Dark Purple, Glossy Stat Blocks, Accent headers). Importing a LongStoryShort JSON payload directly maps over background strings, stats, HP max values, and initializes the proper UI cards.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
       </div>
+
+      {/* Ability Scores */}
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-6">
+        {ABILITY_KEYS.map((key) => {
+          const score = stats[key] ?? 10;
+          const mod = abilityModifier(score);
+          return (
+            <div key={key} className="card text-center py-4 hover:-translate-y-1 transition-transform cursor-default" style={{ borderColor: mod >= 0 ? undefined : 'var(--dragon)' }}>
+              <p className="text-xs font-ui font-black tracking-widest uppercase mb-1" style={{ color: 'var(--text-muted)' }}>{key.toUpperCase()}</p>
+              <p className="font-heading font-black text-4xl" style={{ color: 'var(--text-primary)' }}>{score}</p>
+              <p className={`text-sm font-bold font-ui mt-1 px-2 py-0.5 rounded-full ${mod >= 0 ? 'bg-teal-500/10 text-teal-400' : 'bg-red-500/10 text-red-400'}`}>
+                {formatModifier(mod)}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 mb-4 border-b" style={{ borderColor: 'var(--border)' }}>
+        {TABS.map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className="relative px-4 py-2 text-sm font-ui font-medium transition-colors"
+            style={{ color: activeTab === tab ? 'var(--accent)' : 'var(--text-muted)' }}
+          >
+            {tab}
+            {activeTab === tab && (
+              <motion.div layoutId="char-tab-indicator" className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t-full" style={{ background: 'var(--accent)' }} />
+            )}
+          </button>
+        ))}
+      </div>
+
+      <AnimatePresence mode="wait">
+        <motion.div key={activeTab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
+          {activeTab === 'Overview' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Saving Throws */}
+              <div className="card">
+                <h3 className="font-heading font-semibold mb-3">Saving Throws</h3>
+                <div className="space-y-2">
+                  {SAVE_ABILITIES.map((ab) => {
+                    const bonus = saveBonus(ab);
+                    const isProficient = saveProfs.has(ab.toLowerCase());
+                    return (
+                      <div key={ab} className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full border-2 flex-shrink-0 ${isProficient ? 'bg-[var(--accent)] border-[var(--accent)]' : 'border-[var(--border)]'}`} />
+                        <span className="text-sm font-ui flex-1 uppercase">{ab}</span>
+                        <span className="font-bold text-sm" style={{ color: bonus >= 0 ? 'var(--teal2)' : 'var(--dragon)' }}>{formatModifier(bonus)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              {/* Info */}
+              <div className="card">
+                <h3 className="font-heading font-semibold mb-3">Info</h3>
+                <div className="space-y-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  <div className="flex justify-between"><span style={{ color: 'var(--text-muted)' }}>Alignment</span><span>{capitalize(data.alignment ?? 'Unaligned')}</span></div>
+                  <div className="flex justify-between"><span style={{ color: 'var(--text-muted)' }}>Background</span><span>{data.background_name}</span></div>
+                  <div className="flex justify-between"><span style={{ color: 'var(--text-muted)' }}>Speed</span><span>{data.speed ?? 30} ft</span></div>
+                  <div className="flex justify-between"><span style={{ color: 'var(--text-muted)' }}>Proficiency Bonus</span><span>+{prof}</span></div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'Skills' && (
+            <div className="card">
+              <h3 className="font-heading font-semibold mb-3">Skill Checks</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                {SKILLS.map((skill) => {
+                  const bonus = skillBonus(skill.name, skill.ability as typeof ABILITY_KEYS[number]);
+                  const isProficient = skillProfs.has(skill.name.toLowerCase());
+                  return (
+                    <div key={skill.name} className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-[var(--surface-raised)] transition-colors">
+                      <div className={`w-3 h-3 rounded-full border-2 flex-shrink-0 ${isProficient ? 'bg-[var(--accent)] border-[var(--accent)]' : 'border-[var(--border)]'}`} />
+                      <span className="text-sm font-ui flex-1">{skill.name}</span>
+                      <span className="text-xs font-ui uppercase" style={{ color: 'var(--text-muted)' }}>{skill.ability.toUpperCase()}</span>
+                      <span className="font-bold text-sm w-8 text-right" style={{ color: bonus >= 0 ? 'var(--teal2)' : 'var(--dragon)' }}>{formatModifier(bonus)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'Spells' && (
+            <div>
+              {spellSlots.length === 0 ? (
+                <div className="card text-center py-12" style={{ color: 'var(--text-muted)' }}>
+                  <Scroll className="w-10 h-10 mx-auto mb-3 opacity-40" />
+                  <p>No spell slots — this character is not a spellcaster, or slots haven't been assigned yet.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
+                  {spellSlots.map((slot) => {
+                    const remaining = slot.total - slot.used;
+                    return (
+                      <div key={slot.level} className="card text-center py-4">
+                        <p className="text-xs font-ui uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>Level {slot.level}</p>
+                        <div className="flex justify-center gap-1 flex-wrap mb-2">
+                          {Array.from({ length: slot.total }).map((_, i) => (
+                            <div key={i} className="w-4 h-4 rounded-full transition-all" style={{ background: i < remaining ? 'var(--accent)' : 'var(--surface-raised)', border: '1px solid var(--border)' }} />
+                          ))}
+                        </div>
+                        <p className="font-heading font-bold" style={{ color: remaining === 0 ? 'var(--dragon)' : 'var(--text-primary)' }}>{remaining}/{slot.total}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'Features' && (
+            <div className="card">
+              <h3 className="font-heading font-semibold mb-3 flex items-center gap-2">
+                <Swords className="w-4 h-4" style={{ color: 'var(--accent)' }} /> Features & Traits
+              </h3>
+              {!data.features || data.features.length === 0 ? (
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No features recorded. Edit the character to add racial traits and class features.</p>
+              ) : (
+                <div className="space-y-4">
+                  {data.features.map((f) => (
+                    <div key={f.name}>
+                      <h4 className="font-ui font-semibold mb-0.5" style={{ color: 'var(--accent)' }}>{f.name}</h4>
+                      <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{f.description}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'Notes' && (
+            <div className="card">
+              <h3 className="font-heading font-semibold mb-3">Adventurer's Notes</h3>
+              <p className="text-sm whitespace-pre-wrap leading-relaxed" style={{ color: data.notes ? 'var(--text-secondary)' : 'var(--text-muted)' }}>
+                {data.notes ?? 'No notes yet. Edit the character to add backstory, session notes, and more.'}
+              </p>
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

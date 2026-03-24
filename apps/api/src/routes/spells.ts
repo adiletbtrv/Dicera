@@ -8,6 +8,7 @@ const router = Router();
 
 const SpellFilterSchema = z.object({
   q: z.string().optional(),
+  ids: z.string().optional(),
   level: z.coerce.number().int().min(0).max(9).optional(),
   school: z.string().optional(),
   class: z.string().optional(),
@@ -22,6 +23,14 @@ const SpellFilterSchema = z.object({
 router.get('/', optionalAuth, async (req, res, next) => {
   try {
     const filters = SpellFilterSchema.parse(req.query);
+
+    if (filters.ids) {
+      const ids = filters.ids.split(',').map((s) => s.trim()).filter(Boolean);
+      const rows = await query('SELECT * FROM spells WHERE id = ANY($1)', [ids]);
+      res.json({ data: rows.rows, total: rows.rows.length, page: 1, limit: ids.length });
+      return;
+    }
+
     const conditions: string[] = [];
     const params: unknown[] = [];
     let p = 1;
@@ -100,3 +109,4 @@ router.get('/:id', optionalAuth, async (req, res, next) => {
 });
 
 export { router as spellsRouter };
+

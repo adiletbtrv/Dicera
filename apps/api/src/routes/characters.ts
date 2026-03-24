@@ -176,4 +176,24 @@ router.delete('/:id', requireAuth, async (req, res, next) => {
   }
 });
 
+router.patch('/:id/slots', requireAuth, async (req, res, next) => {
+  try {
+    const { level, used } = z.object({ level: z.number().int().min(1).max(9), used: z.number().int().min(0) }).parse(req.body);
+    const char = await queryOne<{ spell_slots: { level: number; total: number; used: number }[] }>(
+      'SELECT spell_slots FROM characters WHERE id = $1 AND user_id = $2',
+      [req.params['id'], req.user!.id],
+    );
+    if (!char) throw new ApiError(404, 'Character not found');
+
+    const slots = (char.spell_slots ?? []).map((s: { level: number; total: number; used: number }) =>
+      s.level === level ? { ...s, used } : s,
+    );
+    await query('UPDATE characters SET spell_slots = $1 WHERE id = $2', [JSON.stringify(slots), req.params['id']]);
+    res.json({ spell_slots: slots });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export { router as charactersRouter };
+

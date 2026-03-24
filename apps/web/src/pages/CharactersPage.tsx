@@ -5,7 +5,7 @@ import { api } from '@/lib/api.js';
 import { Sword, Plus, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-interface CharacterSummary { id: string; name: string; race: string; classes: { className: string; level: number }[]; level: number }
+interface CharacterSummary { id: string; name: string; race_name: string; total_level: number; classes: { class_name: string; level: number }[] }
 
 export function CharactersPage() {
     const user = useAuthStore((s) => s.user);
@@ -47,7 +47,7 @@ export function CharactersPage() {
                                </div>
                                <div>
                                    <h2 className="font-heading font-bold text-lg" style={{ color: 'var(--text-primary)' }}>{char.name}</h2>
-                                   <p className="text-sm font-ui" style={{ color: 'var(--text-secondary)' }}>Level {char.level} {char.race}</p>
+                                   <p className="text-sm font-ui" style={{ color: 'var(--text-secondary)' }}>Level {char.total_level} {char.race_name}</p>
                                </div>
                            </div>
                            <div className="flex flex-wrap gap-2">

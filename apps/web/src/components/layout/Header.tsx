@@ -1,13 +1,14 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.js';
 import { useThemeStore } from '@/store/theme.js';
-import { Sun, Moon, LogOut, LogIn, UserPlus, Menu } from 'lucide-react';
+import { Sun, Moon, LogOut, LogIn, UserPlus, Menu, Search } from 'lucide-react';
 
 interface HeaderProps {
   onMenuClick?: () => void;
+  onSearchClick?: () => void;
 }
 
-export function Header({ onMenuClick }: HeaderProps) {
+export function Header({ onMenuClick, onSearchClick }: HeaderProps) {
   const { user, logout } = useAuthStore();
   const { theme, toggle } = useThemeStore();
   const navigate = useNavigate();
@@ -33,7 +34,18 @@ export function Header({ onMenuClick }: HeaderProps) {
         <Menu className="w-5 h-5" style={{ color: 'var(--text-secondary)' }} />
       </button>
 
-      <div className="flex-1" />
+      <button
+        onClick={onSearchClick}
+        className="btn-ghost px-3 py-2 rounded-xl flex items-center gap-2 text-sm flex-1 max-w-[200px]"
+        style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
+        aria-label="Open search (Cmd+K)"
+      >
+        <Search className="w-4 h-4 flex-shrink-0" />
+        <span className="text-xs">Search...</span>
+        <kbd className="ml-auto text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--surface)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+          ⌘K
+        </kbd>
+      </button>
 
       <div className="flex items-center gap-2">
 

@@ -5,27 +5,47 @@ import { Sidebar } from './Sidebar.js';
 import { Header } from './Header.js';
 import { useAuthStore } from '@/store/auth.js';
 import { Menu, X } from 'lucide-react';
+import { CommandPalette } from '@/components/CommandPalette.js';
+import { ToastContainer } from '@/components/ToastContainer.js';
+
+const PUBLIC_PREFIXES = ['/', '/spells', '/bestiary', '/login', '/register', '/races', '/classes', '/backgrounds', '/conditions', '/equipment', '/magic-items', '/feats', '/rules'];
 
 export function Layout() {
   const loadUser = useAuthStore((s) => s.loadUser);
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   useEffect(() => {
-    loadUser().catch(() => navigate('/login'));
-  }, [loadUser, navigate]);
+    loadUser().catch(() => {
+      const isPublic = PUBLIC_PREFIXES.some(
+        (p) => location.pathname === p || location.pathname.startsWith(p + '/'),
+      );
+      if (!isPublic) navigate('/login');
+    });
+  }, [loadUser, navigate, location.pathname]);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSearchOpen((o) => !o);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
 
   return (
     <div
       className="flex h-[100dvh] w-full overflow-hidden relative transition-colors duration-300"
       style={{ background: 'var(--bg)' }}
     >
-
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
@@ -43,7 +63,7 @@ export function Layout() {
       </div>
 
       <div className="flex flex-col flex-1 overflow-hidden relative z-10 w-full min-w-0">
-        <Header onMenuClick={() => setIsMobileMenuOpen(true)} />
+        <Header onMenuClick={() => setIsMobileMenuOpen(true)} onSearchClick={() => setIsSearchOpen(true)} />
         <main className="flex-1 overflow-y-auto scrollbar-thin">
           <AnimatePresence mode="wait">
             <motion.div
@@ -59,6 +79,9 @@ export function Layout() {
           </AnimatePresence>
         </main>
       </div>
+
+      <CommandPalette isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      <ToastContainer />
     </div>
   );
 }

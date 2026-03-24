@@ -411,6 +411,23 @@ CREATE TABLE IF NOT EXISTS dice_roll_history (
 );
 
 -- ============================
+-- FEATS
+-- ============================
+CREATE TABLE IF NOT EXISTS feats (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  prerequisite TEXT,
+  description TEXT NOT NULL,
+  benefits JSONB DEFAULT '[]',
+  source TEXT NOT NULL,
+  page INTEGER,
+  homebrew BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS feats_name_trgm_idx ON feats USING gin(name gin_trgm_ops);
+
+-- ============================
 -- INDEXES
 -- ============================
 CREATE INDEX IF NOT EXISTS spells_level_idx ON spells(level);

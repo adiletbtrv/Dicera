@@ -15,6 +15,11 @@ import { diceRouter } from './routes/dice.js';
 import { homebrewRouter } from './routes/homebrew.js';
 import { mapsRouter } from './routes/maps.js';
 import { aiRouter } from './routes/ai.js';
+import { racesRouter } from './routes/races.js';
+import { classesRouter } from './routes/classes.js';
+import { backgroundsRouter } from './routes/backgrounds.js';
+import { featsRouter } from './routes/feats.js';
+import { conditionsRouter } from './routes/conditions.js';
 import { errorHandler, notFound } from './middleware/error-handler.js';
 
 export const app = express();
@@ -48,6 +53,11 @@ app.use('/api/dice', diceRouter);
 app.use('/api/homebrew', homebrewRouter);
 app.use('/api/maps', mapsRouter);
 app.use('/api/ai', aiRouter);
+app.use('/api/races', racesRouter);
+app.use('/api/classes', classesRouter);
+app.use('/api/backgrounds', backgroundsRouter);
+app.use('/api/feats', featsRouter);
+app.use('/api/conditions', conditionsRouter);
 
 app.use(notFound);
 app.use(errorHandler);

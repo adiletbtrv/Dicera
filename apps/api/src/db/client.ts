@@ -10,9 +10,20 @@ export const pool = new Pool({
   connectionTimeoutMillis: 5_000,
 });
 
-pool.on('error', (err) => {
-  console.error('Unexpected DB pool error:', err);
+pool.on('error', (err: NodeJS.ErrnoException) => {
+  if (err.code !== 'ECONNRESET' && err.code !== 'EPIPE') {
+    console.error('Unexpected DB pool error:', err);
+  }
 });
+
+export async function healthCheck(): Promise<void> {
+  const client = await pool.connect();
+  try {
+    await client.query('SELECT 1');
+  } finally {
+    client.release();
+  }
+}
 
 export async function query<T extends pg.QueryResultRow = pg.QueryResultRow>(
   sql: string,

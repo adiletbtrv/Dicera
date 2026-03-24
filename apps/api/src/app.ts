@@ -1,0 +1,53 @@
+import express from 'express';
+import helmet from 'helmet';
+import cors from 'cors';
+import { rateLimit } from 'express-rate-limit';
+import pinoHttp from 'pino-http';
+import { config } from './config.js';
+import { logger } from './utils/logger.js';
+import { authRouter } from './routes/auth.js';
+import { spellsRouter } from './routes/spells.js';
+import { monstersRouter } from './routes/monsters.js';
+import { charactersRouter } from './routes/characters.js';
+import { campaignsRouter } from './routes/campaigns.js';
+import { encountersRouter } from './routes/encounters.js';
+import { diceRouter } from './routes/dice.js';
+import { homebrewRouter } from './routes/homebrew.js';
+import { mapsRouter } from './routes/maps.js';
+import { aiRouter } from './routes/ai.js';
+import { errorHandler, notFound } from './middleware/error-handler.js';
+
+export const app = express();
+
+app.use(helmet());
+app.use(cors({ origin: config.corsOrigin, credentials: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+app.use(pinoHttp({ logger }));
+
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  message: { error: 'Too many requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use(globalLimiter);
+
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', env: config.nodeEnv });
+});
+
+app.use('/api/auth', authRouter);
+app.use('/api/spells', spellsRouter);
+app.use('/api/monsters', monstersRouter);
+app.use('/api/characters', charactersRouter);
+app.use('/api/campaigns', campaignsRouter);
+app.use('/api/encounters', encountersRouter);
+app.use('/api/dice', diceRouter);
+app.use('/api/homebrew', homebrewRouter);
+app.use('/api/maps', mapsRouter);
+app.use('/api/ai', aiRouter);
+
+app.use(notFound);
+app.use(errorHandler);

@@ -1,0 +1,25 @@
+{
+  "name": "@dnd/data",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "dev": "tsc --project tsconfig.json --watch",
+    "etl:spells": "tsx src/etl/spells.ts",
+    "etl:monsters": "tsx src/etl/monsters.ts",
+    "etl:classes": "tsx src/etl/classes.ts",
+    "etl:items": "tsx src/etl/items.ts",
+    "etl:all": "npm run etl:spells && npm run etl:monsters && npm run etl:classes && npm run etl:items",
+    "setup-data": "tsx scripts/download-srd.ts && npm run etl:all"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "tsx": "^4.17.0",
+    "typescript": "^5.5.4"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "jsx": "react-jsx",
+    "incremental": true,
+    "composite": false
+  },
+  "references": [
+    { "path": "./packages/data" },
+    { "path": "./packages/ai" },
+    { "path": "./apps/api" },
+    { "path": "./apps/web" }
+  ],
+  "exclude": ["node_modules", "**/node_modules", "**/dist", "**/.next"]
+}

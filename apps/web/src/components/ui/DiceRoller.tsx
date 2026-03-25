@@ -6,9 +6,10 @@ import { Dices, CheckSquare, Square } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as THREE from 'three';
 
-function Real3DDice({ isRolling }: { isRolling: boolean }) {
+function Real3DDice({ isRolling, dieType }: { isRolling: boolean, dieType: string }) {
   const mountRef = useRef<HTMLDivElement>(null);
   const isRollingRef = useRef(isRolling);
+  const sceneRef = useRef<THREE.Scene | null>(null);
 
   useEffect(() => {
     isRollingRef.current = isRolling;
@@ -17,6 +18,7 @@ function Real3DDice({ isRolling }: { isRolling: boolean }) {
   useEffect(() => {
     if (!mountRef.current) return;
     const scene = new THREE.Scene();
+    sceneRef.current = scene;
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
     camera.position.z = 8;
     
@@ -25,7 +27,29 @@ function Real3DDice({ isRolling }: { isRolling: boolean }) {
     renderer.setPixelRatio(window.devicePixelRatio);
     mountRef.current.appendChild(renderer.domElement);
 
-    const geometry = new THREE.IcosahedronGeometry(2.5, 0);
+    let geometry: THREE.BufferGeometry;
+    let targetRot = { x: 0, y: 0, z: 0 };
+
+    if (dieType === 'd4') {
+      geometry = new THREE.TetrahedronGeometry(2.2);
+      targetRot = { x: 0.615, y: -0.785, z: 0 };
+    } else if (dieType === 'd6') {
+      geometry = new THREE.BoxGeometry(2.8, 2.8, 2.8);
+      targetRot = { x: 0, y: 0, z: 0 };
+    } else if (dieType === 'd8') {
+      geometry = new THREE.OctahedronGeometry(2.4);
+      targetRot = { x: -0.615, y: -0.785, z: 0 };
+    } else if (dieType === 'd10' || dieType === 'd100') {
+      geometry = new THREE.OctahedronGeometry(2.4); // fallback D10 to Octahedron for now
+      targetRot = { x: -0.615, y: -0.785, z: 0 };
+    } else if (dieType === 'd12') {
+      geometry = new THREE.DodecahedronGeometry(2.2);
+      targetRot = { x: 0, y: 0, z: 0 };
+    } else {
+      geometry = new THREE.IcosahedronGeometry(2.4, 0); // d20
+      targetRot = { x: -0.5535, y: 0, z: 0 };
+    }
+
     const material = new THREE.MeshStandardMaterial({ 
       color: 0x8b5cf6, roughness: 0.15, metalness: 0.7 
     });
@@ -54,9 +78,9 @@ function Real3DDice({ isRolling }: { isRolling: boolean }) {
         mesh.rotation.z += 0.10;
         group.position.y = Math.sin(Date.now() * 0.01) * 0.3;
       } else {
-        mesh.rotation.x = THREE.MathUtils.lerp(mesh.rotation.x, 0, 0.1);
-        mesh.rotation.y = THREE.MathUtils.lerp(mesh.rotation.y, 0, 0.1);
-        mesh.rotation.z = THREE.MathUtils.lerp(mesh.rotation.z, 0, 0.1);
+        mesh.rotation.x = THREE.MathUtils.lerp(mesh.rotation.x, targetRot.x, 0.1);
+        mesh.rotation.y = THREE.MathUtils.lerp(mesh.rotation.y, targetRot.y, 0.1);
+        mesh.rotation.z = THREE.MathUtils.lerp(mesh.rotation.z, targetRot.z, 0.1);
         group.position.y = THREE.MathUtils.lerp(group.position.y, 0, 0.05);
       }
       renderer.render(scene, camera);
@@ -69,8 +93,10 @@ function Real3DDice({ isRolling }: { isRolling: boolean }) {
         mountRef.current.removeChild(renderer.domElement);
       }
       renderer.dispose();
+      geometry.dispose();
+      material.dispose();
     };
-  }, []);
+  }, [dieType]);
 
   return <div ref={mountRef} className="absolute inset-0 flex items-center justify-center opacity-80" />;
 }
@@ -144,6 +170,9 @@ export function DiceRoller({ campaignId, compact = false }: DiceRollerProps) {
     rollDice(expr);
   }
 
+  const match = expression.match(/d(\d+)/i);
+  const currentDieType = match ? `d${match[1]}`.toLowerCase() : 'd20';
+
   return (
     <div className="space-y-6">
 
@@ -215,7 +244,7 @@ export function DiceRoller({ campaignId, compact = false }: DiceRollerProps) {
 
         {enableAnimation && (
           <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden flex items-center justify-center">
-             {(isRolling || lastResult) && <Real3DDice isRolling={isRolling} />}
+             {(isRolling || lastResult) && <Real3DDice isRolling={isRolling} dieType={currentDieType} />}
           </div>
         )}
 
@@ -310,3 +339,4 @@ export function DiceRoller({ campaignId, compact = false }: DiceRollerProps) {
     </div>
   );
 }
+

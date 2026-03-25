@@ -5,10 +5,13 @@ import { StatBlock } from '@/components/ui/StatBlock.js';
 import { ChevronLeft, Swords } from 'lucide-react';
 import { useEncounterStore } from '@/store/encounter.js';
 import type { Monster } from '@dnd/data';
+import { useToastStore } from '@/store/toast.js';
 
 export function MonsterDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const addMonster = useEncounterStore((s) => s.addMonster);
+  const toast = useToastStore((s) => s.add);
 
   const { data: monster, isLoading, isError } = useQuery({
     queryKey: ['monster', id],
@@ -28,7 +31,10 @@ export function MonsterDetailPage() {
     );
   }
 
-  const addMonster = useEncounterStore((s) => s.addMonster);
+  function handleAdd() {
+    addMonster(monster!, 1);
+    toast({ type: 'success', message: `${monster!.name} added to encounter!`, duration: 3000 });
+  }
 
   return (
     <div className="max-w-3xl mx-auto pb-12 relative">
@@ -36,7 +42,7 @@ export function MonsterDetailPage() {
         <button onClick={() => navigate('/bestiary')} className="btn-ghost flex items-center gap-1">
           <ChevronLeft className="w-4 h-4" /> Back to Bestiary
         </button>
-        <button onClick={() => addMonster(monster, 1)} className="btn-primary flex items-center gap-1.5 shadow-md">
+        <button onClick={handleAdd} className="btn-primary flex items-center gap-1.5 shadow-md">
           <Swords className="w-4 h-4" /> Add to Encounter
         </button>
       </div>

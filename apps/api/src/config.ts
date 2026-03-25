@@ -12,7 +12,7 @@ const ConfigSchema = z.object({
     openaiApiKey: z.string().optional(),
     huggingfaceApiKey: z.string().optional(),
     geminiApiKey: z.string().optional(),
-    defaultModel: z.string().default('gemini-2.5-flash'),
+    defaultModel: z.string().default('gemini-1.5-flash'),
     embeddingModel: z.string().default('text-embedding-004'),
     maxRequestsPerMinute: z.coerce.number().default(5),
     maxRequestsPerDay: z.coerce.number().default(50),

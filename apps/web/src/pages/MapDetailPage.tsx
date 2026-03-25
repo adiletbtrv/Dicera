@@ -2,30 +2,33 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api.js';
-import { ChevronLeft, ZoomIn, ZoomOut, RotateCcw, Download } from 'lucide-react';
+import { ChevronLeft, ZoomIn, ZoomOut, RotateCcw, Download, MapPin, Trash2, Edit2, Check, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface MapData {
   id: string; name: string; description?: string; image_url?: string;
   tags?: string[]; width?: number; height?: number;
 }
 
-type Pin = { x: number; y: number; label: string; color: string };
+type Pin = { id: string; x: number; y: number; label: string; color: string; size: number };
 const PIN_COLORS = ['#ef4444', '#22c55e', '#3b82f6', '#f59e0b', '#a855f7'];
+const PIN_SIZES = [16, 24, 32, 48];
 
 export function MapDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
+  
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  
   const [pins, setPins] = useState<Pin[]>([]);
-  const [pinColor, setPinColor] = useState(PIN_COLORS[0]!);
   const [pinMode, setPinMode] = useState(false);
-  const [pinLabel, setPinLabel] = useState('');
+  const [pinForm, setPinForm] = useState({ color: PIN_COLORS[0]!, size: 24, label: '' });
+  const [editingPin, setEditingPin] = useState<Pin | null>(null);
   const [imgLoaded, setImgLoaded] = useState(false);
 
   const { data, isLoading } = useQuery({
@@ -33,68 +36,6 @@ export function MapDetailPage() {
     queryFn: () => api.get<MapData>(`/maps/${id}`),
     enabled: !!id,
   });
-
-  const draw = useCallback(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx) return;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.save();
-    ctx.translate(offset.x, offset.y);
-    ctx.scale(scale, scale);
-
-    if (imgRef.current && imgLoaded) {
-      const img = imgRef.current;
-      const aspectRatio = img.naturalWidth / img.naturalHeight;
-      const drawW = canvas.width / scale;
-      const drawH = drawW / aspectRatio;
-      ctx.drawImage(img, 0, 0, drawW, drawH);
-
-      pins.forEach((pin) => {
-        const px = pin.x * drawW;
-        const py = pin.y * drawH;
-        ctx.beginPath();
-        ctx.arc(px, py, 8 / scale, 0, Math.PI * 2);
-        ctx.fillStyle = pin.color;
-        ctx.fill();
-        ctx.strokeStyle = 'white';
-        ctx.lineWidth = 2 / scale;
-        ctx.stroke();
-        if (pin.label) {
-          ctx.font = `${12 / scale}px sans-serif`;
-          ctx.fillStyle = 'white';
-          ctx.textAlign = 'center';
-          ctx.fillText(pin.label, px, py - 12 / scale);
-        }
-      });
-    } else if (!imgRef.current && data?.image_url) {
-      ctx.fillStyle = 'rgba(139,92,246,0.05)';
-      ctx.fillRect(0, 0, canvas.width / scale, canvas.height / scale);
-      ctx.font = `${14 / scale}px sans-serif`;
-      ctx.fillStyle = 'rgba(255,255,255,0.3)';
-      ctx.textAlign = 'center';
-      ctx.fillText('Loading map...', (canvas.width / scale) / 2, (canvas.height / scale) / 2);
-    } else if (!data?.image_url) {
-      ctx.fillStyle = 'rgba(139,92,246,0.05)';
-      ctx.fillRect(0, 0, canvas.width / scale, canvas.height / scale);
-      ctx.font = `${14 / scale}px sans-serif`;
-      ctx.fillStyle = 'rgba(255,255,255,0.3)';
-      ctx.textAlign = 'center';
-      ctx.fillText('No map image uploaded', (canvas.width / scale) / 2, (canvas.height / scale) / 2);
-    }
-
-    ctx.restore();
-  }, [scale, offset, pins, imgLoaded, data?.image_url]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container) return;
-    canvas.width = container.clientWidth;
-    canvas.height = container.clientHeight;
-    draw();
-  }, [draw]);
 
   useEffect(() => {
     if (!data?.image_url) return;
@@ -104,12 +45,20 @@ export function MapDetailPage() {
     img.src = data.image_url;
   }, [data?.image_url]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPinMode(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   function handleZoom(delta: number) {
     setScale((s) => Math.max(0.25, Math.min(5, s + delta)));
   }
 
   function handleMouseDown(e: React.MouseEvent) {
-    if (pinMode) return;
+    if (pinMode || editingPin) return;
     setIsDragging(true);
     setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
   }
@@ -121,21 +70,40 @@ export function MapDetailPage() {
 
   function handleMouseUp() { setIsDragging(false); }
 
-  function handleClick(e: React.MouseEvent) {
+  function handleContainerClick(e: React.MouseEvent) {
     if (!pinMode) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const mx = (e.clientX - rect.left - offset.x) / scale;
-    const my = (e.clientY - rect.top - offset.y) / scale;
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    
+    // Calculate click coordinates relative to the container
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+    
+    // Reverse the transform to find the pixel coordinate on the original image
+    const imgX = (clickX - offset.x) / scale;
+    const imgY = (clickY - offset.y) / scale;
+    
+    // Convert to a ratio relative to the natural image dimensions
     const img = imgRef.current;
     if (!img || !imgLoaded) return;
-    const aspectRatio = img.naturalWidth / img.naturalHeight;
-    const drawW = canvas.width / scale;
-    const drawH = drawW / aspectRatio;
-    setPins((prev) => [...prev, { x: mx / drawW, y: my / drawH, color: pinColor, label: pinLabel || `Pin ${prev.length + 1}` }]);
+    
+    const ratioX = imgX / img.naturalWidth;
+    const ratioY = imgY / img.naturalHeight;
+    
+    // Create new pin
+    const newPin: Pin = {
+      id: Math.random().toString(36).substr(2, 9),
+      x: ratioX,
+      y: ratioY,
+      label: pinForm.label || `Pin ${pins.length + 1}`,
+      color: pinForm.color,
+      size: pinForm.size,
+    };
+    
+    setPins((prev) => [...prev, newPin]);
     setPinMode(false);
-    setPinLabel('');
+    setPinForm({ ...pinForm, label: '' });
   }
 
   function handleWheel(e: React.WheelEvent) {
@@ -144,12 +112,50 @@ export function MapDetailPage() {
   }
 
   function handleExport() {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    // Generate a quick canvas export combining the image and pins
+    const canvas = document.createElement('canvas');
+    if (!imgRef.current || !imgLoaded) return;
+    const img = imgRef.current;
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    ctx.drawImage(img, 0, 0);
+    pins.forEach((pin) => {
+      const px = pin.x * img.naturalWidth;
+      const py = pin.y * img.naturalHeight;
+      ctx.beginPath();
+      ctx.arc(px, py, pin.size / 2, 0, Math.PI * 2);
+      ctx.fillStyle = pin.color;
+      ctx.fill();
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      if (pin.label) {
+        ctx.font = `${Math.max(16, pin.size / 1.5)}px sans-serif`;
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'center';
+        ctx.fillText(pin.label, px, py - pin.size / 2 - 4);
+      }
+    });
+
     const link = document.createElement('a');
     link.download = `${data?.name ?? 'map'}.png`;
     link.href = canvas.toDataURL();
     link.click();
+  }
+
+  function saveEditedPin() {
+    if (!editingPin) return;
+    setPins(pins.map(p => p.id === editingPin.id ? editingPin : p));
+    setEditingPin(null);
+  }
+
+  function deleteEditedPin() {
+    if (!editingPin) return;
+    setPins(pins.filter(p => p.id !== editingPin.id));
+    setEditingPin(null);
   }
 
   if (isLoading) return <div className="text-center py-12" style={{ color: 'var(--text-muted)' }}>Loading map...</div>;
@@ -157,27 +163,35 @@ export function MapDetailPage() {
 
   return (
     <div className="max-w-6xl mx-auto flex flex-col gap-4" style={{ height: 'calc(100vh - 12rem)' }}>
-      <div className="flex items-center gap-3 flex-shrink-0">
+      <div className="flex flex-wrap items-center gap-3 flex-shrink-0">
         <button onClick={() => navigate('/maps')} className="btn-ghost flex items-center gap-1">
           <ChevronLeft className="w-4 h-4" /> Maps
         </button>
         <h1 className="font-heading text-2xl font-bold flex-1">{data.name}</h1>
         <div className="flex items-center gap-2">
-          <button onClick={() => handleZoom(0.25)} className="btn-secondary p-2"><ZoomIn className="w-4 h-4" /></button>
-          <button onClick={() => handleZoom(-0.25)} className="btn-secondary p-2"><ZoomOut className="w-4 h-4" /></button>
-          <button onClick={() => { setScale(1); setOffset({ x: 0, y: 0 }); }} className="btn-secondary p-2" title="Reset view"><RotateCcw className="w-4 h-4" /></button>
-          <div className="flex gap-1">
+          <button onClick={() => handleZoom(0.25)} className="btn-secondary p-2" title="Zoom In"><ZoomIn className="w-4 h-4" /></button>
+          <button onClick={() => handleZoom(-0.25)} className="btn-secondary p-2" title="Zoom Out"><ZoomOut className="w-4 h-4" /></button>
+          <button onClick={() => { setScale(1); setOffset({ x: 0, y: 0 }); }} className="btn-secondary p-2" title="Reset details view"><RotateCcw className="w-4 h-4" /></button>
+          
+          <div className="h-6 w-px bg-white/10 mx-1" />
+          
+          <div className="flex gap-1 bg-white/5 rounded-full p-1 border border-white/10">
             {PIN_COLORS.map((c) => (
-              <button key={c} onClick={() => { setPinColor(c); setPinMode(true); }} className="w-6 h-6 rounded-full border-2 transition-transform hover:scale-110" style={{ background: c, borderColor: pinColor === c && pinMode ? 'white' : 'transparent' }} title={`Place ${c} pin`} />
+              <button key={c} onClick={() => { setPinForm({...pinForm, color: c}); setPinMode(true); setEditingPin(null); }} className="w-6 h-6 rounded-full border-2 transition-transform hover:scale-110" style={{ background: c, borderColor: pinForm.color === c && pinMode ? 'white' : 'transparent' }} title={`Place ${c} pin`} />
             ))}
           </div>
           {pinMode && (
-            <input className="input px-2 py-1 text-sm w-32" placeholder="Pin label..." value={pinLabel} onChange={(e) => setPinLabel(e.target.value)} />
+             <div className="flex items-center gap-2">
+               <input className="input px-2 py-1 text-sm w-32" placeholder="Pin label..." value={pinForm.label} onChange={(e) => setPinForm({...pinForm, label: e.target.value})} autoFocus />
+               <select className="input px-2 py-1 text-sm w-20" value={pinForm.size} onChange={(e) => setPinForm({...pinForm, size: Number(e.target.value)})}>
+                 {PIN_SIZES.map(s => <option key={s} value={s}>{s}px</option>)}
+               </select>
+             </div>
           )}
-          {pins.length > 0 && <button onClick={() => setPins([])} className="btn-secondary text-xs px-2">Clear Pins</button>}
+          {pins.length > 0 && <button onClick={() => { if(confirm('Clear all pins?')) setPins([]); }} className="btn-secondary text-xs px-2">Clear Pins</button>}
           <button onClick={handleExport} className="btn-secondary p-2" title="Export as PNG"><Download className="w-4 h-4" /></button>
         </div>
-        <span className="text-xs font-ui" style={{ color: 'var(--text-muted)' }}>{Math.round(scale * 100)}%</span>
+        <span className="text-xs font-ui min-w-[40px] text-right" style={{ color: 'var(--text-muted)' }}>{Math.round(scale * 100)}%</span>
       </div>
 
       <div
@@ -188,15 +202,108 @@ export function MapDetailPage() {
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        onClick={handleClick}
+        onClick={handleContainerClick}
         onWheel={handleWheel}
       >
-        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
+        {!data.image_url ? (
+           <div className="absolute inset-0 flex items-center justify-center text-white/30 font-ui font-medium">No map image uploaded</div>
+        ) : !imgLoaded ? (
+           <div className="absolute inset-0 flex items-center justify-center text-white/30 font-ui font-medium">Loading map...</div>
+        ) : (
+           <div 
+             className="absolute"
+             style={{
+               left: offset.x,
+               top: offset.y,
+               transformOrigin: '0 0',
+               transform: `scale(${scale})`,
+               width: imgRef.current?.naturalWidth,
+               height: imgRef.current?.naturalHeight,
+               backgroundImage: `url(${data.image_url})`,
+               backgroundSize: '100% 100%',
+               backgroundRepeat: 'no-repeat'
+             }}
+           />
+        )}
+
+        {/* Pins Rendered as DOM elements over the image wrapper */}
+        {imgLoaded && imgRef.current && pins.map(pin => {
+          const px = offset.x + pin.x * imgRef.current!.naturalWidth * scale;
+          const py = offset.y + pin.y * imgRef.current!.naturalHeight * scale;
+          
+          return (
+            <div 
+              key={pin.id} 
+              className="absolute z-10 transition-transform hover:scale-110"
+              style={{ left: px, top: py, transform: 'translate(-50%, -100%)' }}
+            >
+              <div 
+                className="relative group cursor-pointer filter drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]"
+                onClick={(e) => { e.stopPropagation(); setEditingPin(pin); setPinMode(false); }}
+              >
+                <MapPin style={{ color: pin.color, fill: pin.color, width: pin.size, height: pin.size }} />
+                {pin.label && (
+                  <span className="absolute top-full left-1/2 -translate-x-1/2 mt-0.5 text-xs font-bold text-white drop-shadow-[0_2px_2px_rgba(0,0,0,1)] whitespace-nowrap pointer-events-none">
+                    {pin.label}
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Pin Editor Popover */}
+        <AnimatePresence>
+          {editingPin && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 10 }}
+              className="absolute z-20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 card shadow-2xl space-y-3 min-w-[280px]"
+              style={{ border: `1px solid ${editingPin.color}` }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-heading font-bold text-lg">Edit Pin</h3>
+                <button onClick={() => setEditingPin(null)} className="btn-ghost p-1"><X className="w-4 h-4" /></button>
+              </div>
+              <div>
+                <label className="label text-xs">Label</label>
+                <input autoFocus className="input" value={editingPin.label} onChange={(e) => setEditingPin({...editingPin, label: e.target.value})} />
+              </div>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="label text-xs">Color</label>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {PIN_COLORS.map(c => 
+                      <button key={c} onClick={() => setEditingPin({...editingPin, color: c})} className="w-6 h-6 rounded-full border-2" style={{ background: c, borderColor: editingPin.color === c ? 'white' : 'transparent' }} />
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="label text-xs">Size</label>
+                  <select className="input px-2 py-1 text-sm h-7" value={editingPin.size} onChange={(e) => setEditingPin({...editingPin, size: Number(e.target.value)})}>
+                    {PIN_SIZES.map(s => <option key={s} value={s}>{s}px</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="flex justify-between pt-4 mt-2 border-t border-white/10">
+                <button onClick={deleteEditedPin} className="btn-ghost text-red-400 p-1 flex items-center gap-1 text-xs"><Trash2 className="w-4 h-4" /> Delete</button>
+                <button onClick={saveEditedPin} className="btn-primary py-1 px-3 flex items-center gap-1 text-sm"><Check className="w-4 h-4" /> Done</button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {pinMode && (
           <div className="absolute top-3 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl text-sm font-ui backdrop-blur-sm pointer-events-none" style={{ background: 'rgba(0,0,0,0.6)', color: 'white' }}>
             Click to place pin — press Esc to cancel
           </div>
         )}
+        <div className="absolute bottom-3 left-3 flex gap-2">
+           <button onClick={() => handleZoom(0.25)} className="btn-secondary rounded-full w-8 h-8 flex items-center justify-center bg-black/50 backdrop-blur"><ZoomIn className="w-4 h-4 text-white" /></button>
+           <button onClick={() => handleZoom(-0.25)} className="btn-secondary rounded-full w-8 h-8 flex items-center justify-center bg-black/50 backdrop-blur"><ZoomOut className="w-4 h-4 text-white" /></button>
+        </div>
         <div className="absolute bottom-3 right-3 text-xs font-ui px-3 py-1.5 rounded-lg pointer-events-none" style={{ background: 'rgba(0,0,0,0.5)', color: 'rgba(255,255,255,0.6)' }}>
           {pins.length} pin{pins.length !== 1 ? 's' : ''} &bull; scroll to zoom &bull; drag to pan
         </div>

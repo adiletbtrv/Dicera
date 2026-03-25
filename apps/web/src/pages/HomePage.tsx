@@ -43,7 +43,7 @@ export function HomePage() {
           <Shield className="w-10 h-10" style={{ color: 'var(--accent)' }} />
         </div>
         <h1 className="font-heading text-5xl md:text-7xl font-bold mb-6 tracking-tight" style={{ color: 'var(--text-primary)' }}>
-          Welcome to <span style={{ color: 'var(--dragon)' }}>Dicera</span>
+          Welcome to <span style={{ color: 'var(--purple2)' }}>Dicera</span>
         </h1>
         <p className="text-xl max-w-2xl mx-auto font-body font-light leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
           Your all-in-one Dungeons & Dragons 5th Edition toolkit. Build characters, manage campaigns,

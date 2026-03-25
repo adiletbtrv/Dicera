@@ -1,15 +1,32 @@
-import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '@/lib/api.js';
 import { CustomSelect } from '@/components/ui/CustomSelect.js';
 import { Shield, ChevronLeft, Save, Upload } from 'lucide-react';
 import { DND_CLASSES, DND_RACES, capitalize } from '@/lib/utils.js';
 
 export function CharacterBuilderPage() {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({ name: '', race: 'human', class: 'fighter', level: 1 });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (id) {
+      api.get<{ name: string; race_name: string; classes: { class_name: string; level: number }[] }>(`/characters/${id}`)
+         .then((char) => {
+            const cls = char.classes?.[0];
+            setFormData({
+              name: char.name,
+              race: char.race_name.toLowerCase(),
+              class: cls ? cls.class_name.toLowerCase() : 'fighter',
+              level: cls ? cls.level : 1
+            });
+         })
+         .catch(console.error);
+    }
+  }, [id]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -79,28 +96,55 @@ export function CharacterBuilderPage() {
     reader.readAsText(file);
   };
 
+  useEffect(() => {
+    if (id) {
+      api.get<{ name: string; race_name: string; classes: { class_name: string; level: number }[] }>(`/characters/${id}`)
+         .then((char) => {
+            const cls = char.classes?.[0];
+            setFormData({
+              name: char.name,
+              race: char.race_name.toLowerCase(),
+              class: cls ? cls.class_name.toLowerCase() : 'fighter',
+              level: cls ? cls.level : 1
+            });
+         })
+         .catch(console.error);
+    }
+  }, [id]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!formData.name.trim()) return;
     setIsSubmitting(true);
     try {
-      await api.post('/characters', {
-        name: formData.name,
-        race_id: formData.race.toLowerCase(),
-        race_name: capitalize(formData.race),
-        background_id: 'bg-1',
-        background_name: 'Acolyte',
-        alignment: 'true neutral',
-        classes: [{ class_id: formData.class.toLowerCase(), class_name: capitalize(formData.class), level: Number(formData.level) }],
-        total_level: Number(formData.level),
-        ability_scores: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
-        max_hit_points: 10 * Number(formData.level),
-        current_hit_points: 10 * Number(formData.level),
-        hit_dice_total: `${formData.level}d8`,
-        armor_class: 10,
-        proficiency_bonus: Math.floor(2 + (Number(formData.level) - 1) / 4)
-      });
-      navigate('/characters');
+      if (id) {
+        await api.patch(`/characters/${id}`, {
+          name: formData.name,
+          race_id: formData.race.toLowerCase(),
+          race_name: capitalize(formData.race),
+          classes: [{ class_id: formData.class.toLowerCase(), class_name: capitalize(formData.class), level: Number(formData.level) }],
+          total_level: Number(formData.level)
+        });
+        navigate(`/characters/${id}`);
+      } else {
+        await api.post('/characters', {
+          name: formData.name,
+          race_id: formData.race.toLowerCase(),
+          race_name: capitalize(formData.race),
+          background_id: 'bg-1',
+          background_name: 'Acolyte',
+          alignment: 'true neutral',
+          classes: [{ class_id: formData.class.toLowerCase(), class_name: capitalize(formData.class), level: Number(formData.level) }],
+          total_level: Number(formData.level),
+          ability_scores: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+          max_hit_points: 10 * Number(formData.level),
+          current_hit_points: 10 * Number(formData.level),
+          hit_dice_total: `${formData.level}d8`,
+          armor_class: 10,
+          proficiency_bonus: Math.floor(2 + (Number(formData.level) - 1) / 4)
+        });
+        navigate('/characters');
+      }
     } catch (err) {
       console.error(err);
       alert('Failed to save character.');
@@ -111,14 +155,14 @@ export function CharacterBuilderPage() {
 
   return (
     <div className="max-w-4xl mx-auto pb-12">
-      <button onClick={() => navigate('/characters')} className="btn-ghost mb-4 flex items-center gap-1">
-        <ChevronLeft className="w-4 h-4" /> Characters
+      <button onClick={() => navigate(id ? `/characters/${id}` : '/characters')} className="btn-ghost mb-4 flex items-center gap-1">
+        <ChevronLeft className="w-4 h-4" /> Back
       </button>
 
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
            <Shield className="w-8 h-8" style={{ color: 'var(--accent)' }} />
-           <h1 className="font-heading text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>Create Character</h1>
+           <h1 className="font-heading text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>{id ? 'Edit Character' : 'Create Character'}</h1>
         </div>
         
         <div>
@@ -168,10 +212,11 @@ export function CharacterBuilderPage() {
         </div>
         <div className="pt-4 flex justify-end">
            <button type="submit" disabled={isSubmitting || !formData.name.trim()} className="btn-primary flex items-center gap-2">
-             <Save className="w-4 h-4" /> {isSubmitting ? 'Saving...' : 'Save Character'}
+             <Save className="w-4 h-4" /> {isSubmitting ? 'Saving...' : (id ? 'Save Changes' : 'Create Character')}
            </button>
         </div>
       </form>
     </div>
   );
 }
+

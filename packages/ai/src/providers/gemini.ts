@@ -13,7 +13,7 @@ export class GeminiProvider implements LlmProvider {
 
     constructor(config: GeminiConfig) {
         this.apiKey = config.apiKey;
-        this.defaultModel = config.defaultModel ?? 'gemini-2.5-flash';
+        this.defaultModel = config.defaultModel ?? 'gemini-1.5-flash';
         this.embeddingModel = config.embeddingModel ?? 'text-embedding-004';
     }
 
@@ -33,10 +33,16 @@ export class GeminiProvider implements LlmProvider {
                 }
             } else {
                 const role = msg.role === 'assistant' ? 'model' : 'user';
-                contents.push({
-                    role,
-                    parts: [{ text: msg.content }]
-                });
+                const lastContent = contents[contents.length - 1];
+                
+                if (lastContent && lastContent.role === role) {
+                    lastContent.parts.push({ text: '\n\n' + msg.content });
+                } else {
+                    contents.push({
+                        role,
+                        parts: [{ text: msg.content }]
+                    });
+                }
             }
         }
 

@@ -1,0 +1,71 @@
+﻿node.exe : C:\Users\
+adile\Downloads\dnd-
+cto\node_modules\pg-
+pool\index.js:45
+At line:1 char:1
++ & "C:\Program File
+s\nodejs/node.exe" "
+C:\Program Files\nod
+ejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~
+    + CategoryInfo  
+            : NotS  
+  pecified: (C:\U   
+ sers\adile\...o    
+ol\index.js:45:    S
+tring) [], Rem    ot
+eException
+    + FullyQualifie 
+   dErrorId : Nati  
+  veCommandError
+ 
+    Error.captureSta
+ckTrace(err)
+          ^
+
+error: role "adile" 
+does not exist
+    at C:\Users\adil
+e\Downloads\dnd-cto\
+node_modules\pg-pool
+\index.js:45:11
+    at process.proce
+ssTicksAndRejections
+ (node:internal/proc
+ess/task_queues:105:
+5)
+    at async fix (C:
+\Users\adile\Downloa
+ds\dnd-cto\apps\api\
+src\db\fix.ts:4:18) 
+{
+  length: 97,
+  severity: 'FATAL',
+  code: '28000',
+  detail: undefined,
+  hint: undefined,
+  position: undefine
+d,
+  internalPosition: 
+undefined,
+  internalQuery: und
+efined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefine
+d,
+  constraint: undefi
+ned,
+  file: 'miscinit.c'
+,
+  line: '799',
+  routine: 'Initiali
+zeSessionUserId'
+}
+
+Node.js v22.20.0

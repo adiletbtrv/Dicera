@@ -12,6 +12,7 @@ const CampaignSchema = z.object({
   description: z.string().default(''),
   setting: z.string().default(''),
   system: z.string().default('D&D 5e'),
+  dm_notes: z.string().default(''),
   is_public: z.boolean().default(false),
 });
 
@@ -92,9 +93,9 @@ router.post('/', requireAuth, async (req, res, next) => {
     const id = uuidv4();
 
     await query(
-      `INSERT INTO campaigns (id, owner_id, name, description, setting, system, is_public)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [id, req.user!.id, body.name, body.description, body.setting, body.system, body.is_public],
+      `INSERT INTO campaigns (id, owner_id, name, description, setting, system, is_public, dm_notes)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [id, req.user!.id, body.name, body.description, body.setting, body.system, body.is_public, body.dm_notes],
     );
 
     res.status(201).json({ id });

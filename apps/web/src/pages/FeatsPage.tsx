@@ -4,6 +4,7 @@ import { api } from '@/lib/api.js';
 import { Star, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { EmptyState } from '@/components/EmptyState.js';
+import { Link } from 'react-router-dom';
 
 interface Feat { id: string; name: string; prerequisite?: string; description: string; source: string }
 
@@ -35,7 +36,7 @@ export function FeatsPage() {
       ) : (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {feats.map((feat) => (
-            <div key={feat.id} className="card">
+            <Link key={feat.id} to={`/feats/${feat.id}`} className="card hover:-translate-y-1 transition-transform cursor-pointer">
               <div className="flex items-start justify-between gap-2 mb-2">
                 <h2 className="font-heading font-bold" style={{ color: 'var(--text-primary)' }}>{feat.name}</h2>
                 {feat.prerequisite && (
@@ -44,6 +45,10 @@ export function FeatsPage() {
                   </span>
                 )}
               </div>
+              <p className="text-sm leading-relaxed line-clamp-3" style={{ color: 'var(--text-secondary)' }}>{feat.description}</p>
+              <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>{feat.source}</p>
+            </Link>
+          ))}
               <p className="text-sm leading-relaxed line-clamp-3" style={{ color: 'var(--text-secondary)' }}>{feat.description}</p>
               <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>{feat.source}</p>
             </div>

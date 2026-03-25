@@ -21,9 +21,36 @@ export function MapUploaderPage() {
     }
     setFile(f);
     setError(null);
-    const reader = new FileReader();
-    reader.onload = () => setPreview(reader.result as string);
-    reader.readAsDataURL(f);
+    const url = URL.createObjectURL(f);
+    const img = new window.Image();
+    img.onload = () => {
+      const MAX_WIDTH = 1920;
+      let width = img.width;
+      let height = img.height;
+      if (width > MAX_WIDTH) {
+        height = Math.round((height * MAX_WIDTH) / width);
+        width = MAX_WIDTH;
+      }
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0, width, height);
+        // Compress heavily as webp
+        const compressed = canvas.toDataURL('image/webp', 0.8);
+        setPreview(compressed);
+      } else {
+        setError('Canvas not supported');
+      }
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = () => {
+      setError('Invalid image file');
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
   }
 
   async function handleSubmit(e: React.FormEvent) {

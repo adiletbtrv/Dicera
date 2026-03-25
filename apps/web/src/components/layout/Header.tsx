@@ -20,7 +20,7 @@ export function Header({ onMenuClick, onSearchClick }: HeaderProps) {
 
   return (
     <header
-      className="h-14 flex-shrink-0 flex items-center px-4 md:px-6 backdrop-blur-xl transition-colors duration-300"
+      className="h-14 flex-shrink-0 flex items-center px-4 md:px-6 backdrop-blur-xl transition-colors duration-300 gap-4"
       style={{
         background: 'var(--header-bg)',
         borderBottom: '1px solid var(--border-subtle)',
@@ -36,19 +36,20 @@ export function Header({ onMenuClick, onSearchClick }: HeaderProps) {
 
       <button
         onClick={onSearchClick}
-        className="btn-ghost px-3 py-2 rounded-xl flex items-center gap-2 text-sm flex-1 max-w-[200px]"
+        className="btn-ghost px-3 py-2 rounded-xl flex items-center gap-2 text-sm w-[600px] max-w-[50vw] justify-between"
         style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
         aria-label="Open search (Cmd+K)"
       >
-        <Search className="w-4 h-4 flex-shrink-0" />
-        <span className="text-xs">Search...</span>
-        <kbd className="ml-auto text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--surface)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+        <div className="flex items-center gap-2">
+          <Search className="w-4 h-4 flex-shrink-0" />
+          <span className="text-xs">Search items, monsters, rules...</span>
+        </div>
+        <kbd className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--surface)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
           ⌘K
         </kbd>
       </button>
 
-      <div className="flex items-center gap-2">
-
+      <div className="flex items-center gap-3 mr-auto">
         <button
           onClick={toggle}
           className="btn-ghost p-2 rounded-xl"
@@ -64,7 +65,7 @@ export function Header({ onMenuClick, onSearchClick }: HeaderProps) {
         <div className="w-px h-6 mx-1" style={{ background: 'var(--border)' }} />
 
         {user ? (
-          <>
+          <div className="flex items-center gap-2">
             <span className="text-sm font-ui font-medium" style={{ color: 'var(--text-secondary)' }}>
               {user.display_name ?? user.username}
             </span>
@@ -74,9 +75,9 @@ export function Header({ onMenuClick, onSearchClick }: HeaderProps) {
             >
               <LogOut className="w-3.5 h-3.5" /> Sign out
             </button>
-          </>
+          </div>
         ) : (
-          <>
+          <div className="flex items-center gap-2">
             <button
               onClick={() => navigate('/login')}
               className="btn-ghost text-xs px-3 py-1.5 flex items-center gap-1.5"
@@ -89,7 +90,7 @@ export function Header({ onMenuClick, onSearchClick }: HeaderProps) {
             >
               <UserPlus className="w-3.5 h-3.5" /> Register
             </button>
-          </>
+          </div>
         )}
       </div>
     </header>

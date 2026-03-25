@@ -245,6 +245,7 @@ CREATE TABLE IF NOT EXISTS campaigns (
   player_ids UUID[] DEFAULT '{}',
   character_ids UUID[] DEFAULT '{}',
   image_url TEXT,
+  dm_notes TEXT DEFAULT '',
   is_public BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()

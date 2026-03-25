@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api.js';
@@ -65,6 +65,7 @@ export function CampaignDetailPage() {
 
   const npcs = data.npcs ?? [];
   const sessions = data.sessions ?? [];
+  const reversedSessions = useMemo(() => [...sessions].reverse(), [sessions]);
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -146,7 +147,7 @@ export function CampaignDetailPage() {
                     </div>
                     <textarea className="input" rows={2} placeholder="Description..." value={npcForm.description} onChange={(e) => setNpcForm((p) => ({ ...p, description: e.target.value }))} />
                     <div className="flex gap-2">
-                      <button onClick={() => addNpcMut.mutate(npcForm)} disabled={!npcForm.name} className="btn-primary text-sm flex items-center gap-1"><Check className="w-4 h-4" /> Save</button>
+                      <button onClick={() => addNpcMut.mutate(npcForm)} disabled={!npcForm.name || addNpcMut.isPending} className="btn-primary text-sm flex items-center gap-1"><Check className="w-4 h-4" /> Save</button>
                       <button onClick={() => setAddingNpc(false)} className="btn-secondary text-sm"><X className="w-4 h-4" /></button>
                     </div>
                   </motion.div>
@@ -191,7 +192,7 @@ export function CampaignDetailPage() {
                     </div>
                     <textarea className="input" rows={3} placeholder="Session summary..." value={sessionForm.summary} onChange={(e) => setSessionForm((p) => ({ ...p, summary: e.target.value }))} />
                     <div className="flex gap-2">
-                      <button onClick={() => addSessionMut.mutate(sessionForm)} disabled={!sessionForm.title} className="btn-primary text-sm flex items-center gap-1"><Check className="w-4 h-4" /> Save</button>
+                      <button onClick={() => addSessionMut.mutate(sessionForm)} disabled={!sessionForm.title || addSessionMut.isPending} className="btn-primary text-sm flex items-center gap-1"><Check className="w-4 h-4" /> Save</button>
                       <button onClick={() => setAddingSession(false)} className="btn-secondary text-sm"><X className="w-4 h-4" /></button>
                     </div>
                   </motion.div>
@@ -204,7 +205,7 @@ export function CampaignDetailPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {[...sessions].reverse().map((s) => (
+                  {reversedSessions.map((s) => (
                     <div key={s.id} className="card">
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="font-heading font-semibold">Session {s.session_number}: {s.title}</h3>

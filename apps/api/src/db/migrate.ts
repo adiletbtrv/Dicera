@@ -14,6 +14,7 @@ async function migrate() {
   const client = await pool.connect();
   try {
     const statements = splitStatements(sql);
+    console.info(`Found ${statements.length} statements to execute.`);
     let success = 0;
     let skipped = 0;
 
@@ -29,13 +30,14 @@ async function migrate() {
           msg.includes('already exists') ||
           msg.includes('duplicate') ||
           msg.includes('DuplicateObject') ||
-          err?.code === '42710' || // duplicate_object
-          err?.code === '42P07' || // duplicate_table
-          err?.code === '42701'    // duplicate_column
+          err?.code === '42710' ||
+          err?.code === '42P07' ||
+          err?.code === '42701'
         ) {
           skipped++;
         } else {
           console.warn(`  ⚠️  Statement failed (skipping):`, msg.slice(0, 120));
+          console.warn(`      Query: ${trimmed.slice(0, 100)}...`);
           skipped++;
         }
       }

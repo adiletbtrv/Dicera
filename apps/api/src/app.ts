@@ -20,6 +20,7 @@ import { classesRouter } from './routes/classes.js';
 import { backgroundsRouter } from './routes/backgrounds.js';
 import { featsRouter } from './routes/feats.js';
 import { conditionsRouter } from './routes/conditions.js';
+import { itemsRouter } from './routes/items.js';
 import { errorHandler, notFound } from './middleware/error-handler.js';
 
 export const app = express();
@@ -58,6 +59,7 @@ app.use('/api/classes', classesRouter);
 app.use('/api/backgrounds', backgroundsRouter);
 app.use('/api/feats', featsRouter);
 app.use('/api/conditions', conditionsRouter);
+app.use('/api/items', itemsRouter);
 
 app.use(notFound);
 app.use(errorHandler);

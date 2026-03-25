@@ -53,7 +53,7 @@ export function CharactersPage() {
                            <div className="flex flex-wrap gap-2">
                                {char.classes?.map((c, i) => (
                                    <span key={i} className="badge bg-[var(--accent-muted)] border border-[var(--border)]" style={{ color: 'var(--accent)' }}>
-                                       {c.className} {c.level}
+                                       {c.class_name} {c.level}
                                    </span>
                                ))}
                            </div>
@@ -73,3 +73,4 @@ export function CharactersPage() {
         </div>
     );
 }
+

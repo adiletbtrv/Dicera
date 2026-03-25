@@ -36,6 +36,7 @@ const ConditionsPage = lazy(() => import('@/pages/ConditionsPage.js').then((m) =
 const EquipmentPage = lazy(() => import('@/pages/EquipmentPage.js').then((m) => ({ default: m.EquipmentPage })));
 const MagicItemsPage = lazy(() => import('@/pages/MagicItemsPage.js').then((m) => ({ default: m.MagicItemsPage })));
 const FeatsPage = lazy(() => import('@/pages/FeatsPage.js').then((m) => ({ default: m.FeatsPage })));
+const FeatDetailPage = lazy(() => import('@/pages/FeatDetailPage.js').then((m) => ({ default: m.FeatDetailPage })));
 const RulesPage = lazy(() => import('@/pages/RulesPage.js').then((m) => ({ default: m.RulesPage })));
 
 const InitiativeTrackerPage = lazy(() => import('@/pages/tools/InitiativeTrackerPage.js').then((m) => ({ default: m.InitiativeTrackerPage })));
@@ -78,14 +79,17 @@ export default function App() {
             <Route path="/equipment" element={<EquipmentPage />} />
             <Route path="/magic-items" element={<MagicItemsPage />} />
             <Route path="/feats" element={<FeatsPage />} />
+            <Route path="/feats/:id" element={<FeatDetailPage />} />
             <Route path="/rules" element={<RulesPage />} />
 
             <Route path="/characters" element={<CharactersPage />} />
             <Route path="/characters/new" element={<CharacterBuilderPage />} />
             <Route path="/characters/:id" element={<CharacterSheetPage />} />
+            <Route path="/characters/:id/edit" element={<CharacterBuilderPage />} />
             <Route path="/campaigns" element={<CampaignsPage />} />
             <Route path="/campaigns/new" element={<CampaignBuilderPage />} />
             <Route path="/campaigns/:id" element={<CampaignDetailPage />} />
+            <Route path="/campaigns/:id/edit" element={<CampaignBuilderPage />} />
             <Route path="/encounters" element={<EncounterBuilderPage />} />
             <Route path="/dice" element={<DiceRollerPage />} />
             <Route path="/maps" element={<MapsPage />} />

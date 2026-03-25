@@ -52,7 +52,8 @@ router.get('/', optionalAuth, async (req, res, next) => {
     }
     if (filters.class) {
       conditions.push(`$${p} = ANY(classes)`);
-      params.push(filters.class.toLowerCase());
+      const capitalized = filters.class.charAt(0).toUpperCase() + filters.class.slice(1).toLowerCase();
+      params.push(capitalized);
       p++;
     }
     if (filters.concentration !== undefined) {

@@ -1,43 +1,61 @@
+# Dependencies
 node_modules
-dist
-.next
-build
+.pnp
+.pnp.js
 
+# Build Outputs
+dist
+build
+.next
+out
+tsc-out
+apps/*/dist
+apps/*/build
+packages/*/dist
+
+# Environment Variables
 .env
 .env.local
-.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
 
+# Database / Storage
+*.sqlite
+*.sqlite3
+apps/api/dnd.sqlite
+apps/api/pgdata/
+
+# Logs & Diagnostics
+logs
 *.log
-*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
+# ETL Payload Data (Raw JSON files)
+packages/data/data/raw/*.json
+!packages/data/data/raw/.gitkeep
+packages/data/output/*.json
+!packages/data/output/.gitkeep
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS Data
 .DS_Store
 Thumbs.db
-desktop.ini
 
-.turbo
-.vercel
-.netlify
-.cache
-
+# Test Coverage
 coverage
 .nyc_output
 
-*.sqlite
-*.sqlite3
-*.db
-
-tmp
-temp
-
-uploads
-vector-store
-chroma-data
-
-.idea
-.vscode
-*.swp
-*.swo
-*~
-
-packages/data/output
-packages/data/data/raw
+# Temp files
+tmp/
+temp/
+.eslintcache

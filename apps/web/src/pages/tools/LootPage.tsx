@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Package, RefreshCw } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api.js';
 
 const COINS_BY_CR: Record<string, [number, number, number, number, number]> = {
   '0-4':  [6, 0, 0, 0, 0],
@@ -30,6 +32,11 @@ export function LootPage() {
   const [partySize, setPartySize] = useState(4);
   const [result, setResult] = useState<LootResult | null>(null);
 
+  const { data: magicItemsData } = useQuery({
+    queryKey: ['items'],
+    queryFn: () => api.get<{ data: { id: string, name: string, rarity: string }[] }>('/items?limit=500'),
+  });
+
   function generate() {
     const [cpD, spD, gpD, epD, ppD] = COINS_BY_CR[cr] ?? [0, 0, 0, 0, 0];
     const mult = partySize;
@@ -44,11 +51,17 @@ export function LootPage() {
       magic: [],
     };
 
+    const dbItems = magicItemsData?.data ?? [];
+    const source = (r: string) => {
+      const filtered = dbItems.filter(i => i.rarity.toLowerCase() === r);
+      return filtered.length > 0 ? filtered.map(i => i.name) : MAGIC_ITEMS[r]!;
+    };
+
     const roll = d(100);
-    if (roll >= 95) loot.magic.push({ rarity: 'legendary', name: pick(MAGIC_ITEMS.legendary!) });
-    else if (roll >= 80) loot.magic.push({ rarity: 'very rare', name: pick(MAGIC_ITEMS['very rare']!) });
-    else if (roll >= 60) loot.magic.push({ rarity: 'rare', name: pick(MAGIC_ITEMS.rare!) });
-    else if (roll >= 30) loot.magic.push({ rarity: 'uncommon', name: pick(MAGIC_ITEMS.uncommon!) });
+    if (roll >= 95) loot.magic.push({ rarity: 'legendary', name: pick(source('legendary')) });
+    else if (roll >= 80) loot.magic.push({ rarity: 'very rare', name: pick(source('very rare')) });
+    else if (roll >= 60) loot.magic.push({ rarity: 'rare', name: pick(source('rare')) });
+    else if (roll >= 30) loot.magic.push({ rarity: 'uncommon', name: pick(source('uncommon')) });
 
     setResult(loot);
   }

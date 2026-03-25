@@ -41,7 +41,7 @@ export function EquipmentPage() {
               onClick={() => setCategory(cat)}
               className={cat === category ? 'btn-primary text-xs py-1.5' : 'btn-secondary text-xs py-1.5'}
             >
-              {cat === '' ? 'All' : cat.replace(/-/g, ' ')}
+              {cat === '' ? 'All Categories' : cat.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
             </button>
           ))}
         </div>

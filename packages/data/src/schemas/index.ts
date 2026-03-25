@@ -5,5 +5,6 @@ export * from './item.js';
 export * from './campaign.js';
 export * from './encounter.js';
 export * from './homebrew.js';
+export * from './feat.js';
 export * from './map.js';
 export * from './class.js';

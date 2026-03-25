@@ -7,14 +7,14 @@ const CONDITION_LIST = ['Blinded', 'Charmed', 'Frightened', 'Grappled', 'Incapac
 
 export function InitiativeTrackerPage() {
   const { combatants, currentIndex, round, isActive, addCombatant, removeCombatant, updateCombatant, sortByInitiative, nextTurn, start, end, clear } = useInitiativeStore();
-  const [form, setForm] = useState({ name: '', initiative: 0, hp: 10, maxHp: 10, type: 'monster' as 'player' | 'monster' | 'npc' });
+  const [form, setForm] = useState({ name: '', initiative: '' as number | string, hp: 10 as number | string, maxHp: 10 as number | string, type: 'monster' as 'player' | 'monster' | 'npc' });
   const alive = combatants.filter((c) => !c.isDown);
   const current = alive[currentIndex];
 
   function add() {
     if (!form.name.trim()) return;
-    addCombatant({ name: form.name, initiative: form.initiative, hp: form.hp, maxHp: form.maxHp, type: form.type });
-    setForm({ name: '', initiative: 0, hp: 10, maxHp: 10, type: 'monster' });
+    addCombatant({ name: form.name, initiative: Number(form.initiative) || 0, hp: Number(form.hp) || 10, maxHp: Number(form.maxHp) || 10, type: form.type });
+    setForm({ name: '', initiative: '', hp: 10, maxHp: 10, type: 'monster' });
   }
 
   function handleDamage(id: string, delta: number) {
@@ -25,6 +25,7 @@ export function InitiativeTrackerPage() {
   }
 
   const TYPE_COLORS = { player: 'var(--teal)', monster: 'var(--dragon)', npc: 'var(--gold2)' };
+  const TYPE_LABELS = { player: 'Player', monster: 'Monster', npc: 'NPC' };
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -48,16 +49,16 @@ export function InitiativeTrackerPage() {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="label text-xs">Initiative</label>
-                  <input type="number" className="input" value={form.initiative} onChange={(e) => setForm((p) => ({ ...p, initiative: +e.target.value }))} />
+                  <input type="number" className="input" value={form.initiative} onChange={(e) => setForm((p) => ({ ...p, initiative: e.target.value === '' ? '' : Number(e.target.value) }))} />
                 </div>
                 <div>
                   <label className="label text-xs">Max HP</label>
-                  <input type="number" className="input" min={1} value={form.maxHp} onChange={(e) => setForm((p) => ({ ...p, maxHp: +e.target.value, hp: +e.target.value }))} />
+                  <input type="number" className="input" min={1} value={form.maxHp} onChange={(e) => setForm((p) => ({ ...p, maxHp: e.target.value === '' ? '' : Number(e.target.value), hp: e.target.value === '' ? '' : Number(e.target.value) }))} />
                 </div>
               </div>
               <div className="flex gap-1">
                 {(['player', 'monster', 'npc'] as const).map((t) => (
-                  <button key={t} onClick={() => setForm((p) => ({ ...p, type: t }))} className={`btn text-xs flex-1 ${form.type === t ? 'btn-primary' : 'btn-secondary'}`}>{t}</button>
+                  <button key={t} onClick={() => setForm((p) => ({ ...p, type: t }))} className={`btn text-xs flex-1 ${form.type === t ? 'btn-primary' : 'btn-secondary'}`}>{TYPE_LABELS[t]}</button>
                 ))}
               </div>
               <button onClick={add} className="btn-primary w-full flex items-center justify-center gap-2">

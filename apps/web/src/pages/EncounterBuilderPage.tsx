@@ -62,19 +62,21 @@ export function EncounterBuilderPage() {
             </div>
           </div>
           <div className="card">
-            <h2 className="font-heading font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Add Monster</h2>
-            <div className="flex gap-2">
-              <input type="text" placeholder="Monster name..." value={monsterInput.name} onChange={(e) => setMonsterInput((p) => ({ ...p, name: e.target.value }))} className="input flex-1" />
-              <CustomSelect
-                value={monsterInput.cr}
-                onChange={(val) => setMonsterInput((p) => ({ ...p, cr: val }))}
-                options={['1/8', '1/4', '1/2', '1', '2', '3', '4', '5'].map(cr => ({ value: cr, label: `CR ${cr}` }))}
-                className="w-24 flex-shrink-0"
-              />
-              <button type="button" onClick={addMonsterManual} className="btn-primary px-4"><Plus className="w-5 h-5" /></button>
+            <h2 className="font-heading font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Add Custom Monster</h2>
+            <div className="space-y-3">
+              <input type="text" placeholder="Monster name..." value={monsterInput.name} onChange={(e) => setMonsterInput((p) => ({ ...p, name: e.target.value }))} className="input w-full" />
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <CustomSelect
+                    value={monsterInput.cr}
+                    onChange={(val) => setMonsterInput((p) => ({ ...p, cr: val }))}
+                    options={['0', '1/8', '1/4', '1/2', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].map(cr => ({ value: cr, label: `CR ${cr}` }))}
+                  />
+                </div>
+                <input type="number" min={1} max={50} value={monsterInput.qty} onChange={(e) => setMonsterInput((p) => ({ ...p, qty: +e.target.value }))} className="input w-20 text-center" placeholder="Qty" />
+              </div>
+              <button disabled={!monsterInput.name} onClick={addMonsterManual} className="btn-secondary w-full flex items-center justify-center gap-2"><Plus className="w-4 h-4" /> Add Monster</button>
             </div>
-            <input type="number" min={1} max={20} value={monsterInput.qty} onChange={(e) => setMonsterInput((p) => ({ ...p, qty: +e.target.value }))} className="input" placeholder="Quantity" />
-            <button onClick={addMonsterManual} className="btn-secondary w-full flex items-center justify-center gap-2"><Plus className="w-4 h-4" /> Add</button>
           </div>
         </div>
         <div className="md:col-span-2 space-y-4">

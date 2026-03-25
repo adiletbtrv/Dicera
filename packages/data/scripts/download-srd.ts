@@ -11,6 +11,11 @@ const FILES = [
   { url: `${REPO}/5e-SRD-Spells.json`, out: 'spells-phb.json' },
   { url: `${REPO}/5e-SRD-Monsters.json`, out: 'monsters-mm.json' },
   { url: `${REPO}/5e-SRD-Classes.json`, out: 'classes.json' },
+  { url: `${REPO}/5e-SRD-Races.json`, out: 'races.json' },
+  { url: `${REPO}/5e-SRD-Backgrounds.json`, out: 'backgrounds.json' },
+  { url: `${REPO}/5e-SRD-Feats.json`, out: 'feats.json' },
+  { url: `${REPO}/5e-SRD-Conditions.json`, out: 'conditions.json' },
+  { url: `${REPO}/5e-SRD-Equipment.json`, out: 'items-phb.json' },
   { url: `${REPO}/5e-SRD-Magic-Items.json`, out: 'items-dmg.json' },
 ];
 

@@ -31,7 +31,7 @@ function SpellFields({ value, onChange }: { value: SpellContent; onChange: (v: S
         </div>
       ))}
       <div className="flex items-center gap-2 col-span-2 md:col-span-3">
-        <input type="checkbox" id="conc" checked={value.concentration} onChange={(e) => onChange({ ...value, concentration: e.target.checked })} className="w-4 h-4 accent-[var(--accent)]" />
+        <input type="checkbox" id="conc" checked={value.concentration} onChange={(e) => onChange({ ...value, concentration: e.target.checked })} className="checkbox" />
         <label htmlFor="conc" className="text-sm font-ui" style={{ color: 'var(--text-secondary)' }}>Requires Concentration</label>
       </div>
     </div>
@@ -67,7 +67,7 @@ function ItemFields({ value, onChange }: { value: ItemContent; onChange: (v: Ite
         <input className="input" placeholder="e.g. Weapon, Armor, Wondrous..." value={value.item_type} onChange={(e) => onChange({ ...value, item_type: e.target.value })} />
       </div>
       <div className="flex items-center gap-2">
-        <input type="checkbox" id="attune" checked={value.requires_attunement} onChange={(e) => onChange({ ...value, requires_attunement: e.target.checked })} className="w-4 h-4 accent-[var(--accent)]" />
+        <input type="checkbox" id="attune" checked={value.requires_attunement} onChange={(e) => onChange({ ...value, requires_attunement: e.target.checked })} className="checkbox" />
         <label htmlFor="attune" className="text-sm font-ui" style={{ color: 'var(--text-secondary)' }}>Requires Attunement</label>
       </div>
     </div>
@@ -147,7 +147,7 @@ export function HomebrewBuilderPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <input type="checkbox" id="pub" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} className="w-4 h-4 accent-[var(--accent)]" />
+            <input type="checkbox" id="pub" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} className="checkbox" />
             <label htmlFor="pub" className="text-sm font-ui" style={{ color: 'var(--text-secondary)' }}>Make public (share with community)</label>
           </div>
         </div>

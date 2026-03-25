@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useDeferredValue } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api.js';
@@ -10,7 +10,7 @@ import { Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { Spell } from '@dnd/data';
 
-const container = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.05 } } };
+const container = { hidden: { opacity: 0 }, visible: { opacity: 1 } };
 const item = { hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0 } };
 
 interface SpellsResponse { data: Spell[]; total: number; page: number; limit: number }

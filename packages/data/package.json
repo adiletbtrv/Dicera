@@ -12,7 +12,8 @@
     "etl:monsters": "tsx src/etl/monsters.ts",
     "etl:classes": "tsx src/etl/classes.ts",
     "etl:items": "tsx src/etl/items.ts",
-    "etl:all": "npm run etl:spells && npm run etl:monsters && npm run etl:classes && npm run etl:items",
+    "etl:feats": "tsx src/etl/feats.ts",
+    "etl:all": "npm run etl:spells && npm run etl:monsters && npm run etl:classes && npm run etl:items && npm run etl:feats",
     "setup-data": "tsx scripts/download-srd.ts && npm run etl:all"
   },
   "dependencies": {

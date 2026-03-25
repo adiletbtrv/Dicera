@@ -142,7 +142,7 @@ export function Sidebar() {
             <Sword className="w-5 h-5 text-white" />
           </div>
           <div>
-            <span className="font-heading text-xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>Dicera</span>
+            <span className="font-heading text-xl font-bold tracking-tight" style={{ color: 'var(--purple2)' }}>Dicera</span>
             <p className="text-xs font-ui" style={{ color: 'var(--text-muted)' }}>5th Edition Toolkit</p>
           </div>
         </div>

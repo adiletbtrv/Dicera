@@ -43,7 +43,7 @@ export function MagicItemsPage() {
             const color = RARITY_COLORS[r] ?? 'var(--text-muted)';
             return (
               <button key={r} onClick={() => setRarity(r)} className={r === rarity ? 'btn-primary text-xs py-1.5' : 'btn-secondary text-xs py-1.5'}>
-                {r === '' ? 'All' : r}
+                {r === '' ? 'All Rarities' : r.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
               </button>
             );
           })}

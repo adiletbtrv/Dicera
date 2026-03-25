@@ -65,6 +65,42 @@
   --header-bg: rgba(14, 11, 22, 0.8);
 }
 
+.light {
+  --bg: #f4f1fc;
+  --bg2: #ede9f9;
+  --bg3: #e4deF7;
+  --surface: #ffffff;
+  --surface-raised: #f4f1fc;
+  --surface-overlay: rgba(244, 241, 252, 0.9);
+  --card: #ffffff;
+
+  --border: #d4c8f0;
+  --border-subtle: #e2d9f8;
+  --border-strong: #b9a4e4;
+  --border-focus: #7c3aed;
+
+  --text-primary: #1e0a4a;
+  --text-secondary: #4b3a7a;
+  --text-muted: #8572a8;
+  --text-inverse: #f4f1fc;
+
+  --accent: #7c3aed;
+  --accent-hover: #6d28d9;
+  --accent-muted: rgba(124, 58, 237, 0.12);
+  --accent-foreground: #ffffff;
+
+  --sidebar-bg: #ffffff;
+  --sidebar-border: #d4c8f0;
+  --sidebar-hover: rgba(124, 58, 237, 0.07);
+  --sidebar-active: rgba(124, 58, 237, 0.13);
+  --header-bg: rgba(244, 241, 252, 0.85);
+
+  --shadow-sm: 0 1px 3px rgba(100, 50, 200, 0.1);
+  --shadow-md: 0 4px 12px rgba(100, 50, 200, 0.12);
+  --shadow-lg: 0 8px 30px rgba(100, 50, 200, 0.15);
+  --shadow-xl: 0 16px 50px rgba(100, 50, 200, 0.18);
+}
+
 /* ──────────────────────────────────────────────────────────────
    BASE LAYER
    ────────────────────────────────────────────────────────────── */
@@ -238,10 +274,12 @@
   /* Target native number inputs */
   input[type="number"] {
     -moz-appearance: textfield;
+    appearance: textfield;
   }
   input[type="number"]::-webkit-inner-spin-button, 
   input[type="number"]::-webkit-outer-spin-button {
     -webkit-appearance: none;
+    appearance: none;
     margin: 0;
   }
 
@@ -323,6 +361,26 @@
 }
 
 /* ──────────────────────────────────────────────────────────────
+   SKELETON SHIMMER
+   ────────────────────────────────────────────────────────────── */
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--surface-raised) 25%,
+    var(--surface) 50%,
+    var(--surface-raised) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* ──────────────────────────────────────────────────────────────
    UTILITIES
    ────────────────────────────────────────────────────────────── */
 
@@ -347,5 +405,32 @@
 
   .text-dim {
     color: var(--text-muted);
+  }
+
+  /* Mobile sidebar */
+  .sidebar-mobile-overlay {
+    @apply fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden;
+  }
+
+  /* Responsive grid helpers */
+  .compendium-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6;
+  }
+
+  .page-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6;
+  }
+
+  .page-header {
+    @apply mb-6 space-y-1;
+  }
+
+  /* Hide scrollbar on mobile nav */
+  .mobile-scroll {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .mobile-scroll::-webkit-scrollbar {
+    display: none;
   }
 }

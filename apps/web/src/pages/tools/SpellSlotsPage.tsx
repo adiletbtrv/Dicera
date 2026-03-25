@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { Sparkles } from 'lucide-react';
 
 const SPELL_SLOTS: Record<number, number[]> = {
   1:  [2, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -42,7 +43,7 @@ export function SpellSlotsPage() {
   return (
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <span className="text-3xl">✨</span>
+        <Sparkles className="w-8 h-8" style={{ color: 'var(--accent)' }} />
         <h1 className="font-heading text-3xl font-bold">Spell Slots Calculator</h1>
       </div>
       <div className="card mb-6">

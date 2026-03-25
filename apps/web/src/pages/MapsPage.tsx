@@ -38,10 +38,13 @@ export function MapsPage() {
           <motion.div variants={item} key={m.id}>
             <div className="card cursor-pointer h-full" onClick={() => navigate(`/maps/${m.id}`)}>
               <div
-                className="aspect-video rounded-xl flex items-center justify-center mb-4"
-                style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-subtle)' }}
+                className="aspect-video rounded-xl flex items-center justify-center mb-4 bg-center bg-cover"
+                style={{ 
+                  background: m.image_url ? `url(${m.image_url}) center/cover` : 'var(--surface-raised)', 
+                  border: '1px solid var(--border-subtle)' 
+                }}
               >
-                <MapIcon className="w-8 h-8" style={{ color: 'var(--text-muted)' }} />
+                {!m.image_url && <MapIcon className="w-8 h-8" style={{ color: 'var(--text-muted)' }} />}
               </div>
               <h2 className="font-heading font-medium text-lg" style={{ color: 'var(--text-primary)' }}>{m.name}</h2>
               <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{m.width_px} × {m.height_px}px</p>

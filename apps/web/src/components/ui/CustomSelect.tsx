@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Check } from 'lucide-react';
-import { cn } from '@/lib/utils.js';
+import { cn } from '@/lib/utils';
 
 interface Option {
   value: string;
@@ -21,17 +21,29 @@ export function CustomSelect({ options, value, onChange, placeholder = 'Select..
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+
+  // FIXED: Explicitly defined the state to allow undefined values to satisfy strict TS
+  const [pos, setPos] = useState<{ top: number | undefined; bottom: number | undefined; left: number; width: number; isUp: boolean }>({
+    top: undefined, bottom: undefined, left: 0, width: 0, isUp: false
+  });
 
   const selectedOption = options.find((o) => o.value === value);
 
   const updatePosition = useCallback(() => {
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+
+      // If there is less than 280px below, and more space above, open upwards!
+      const openUpwards = spaceBelow < 280 && spaceAbove > spaceBelow;
+
       setPos({
-        top: rect.bottom + 6,
+        top: openUpwards ? undefined : rect.bottom + 6,
+        bottom: openUpwards ? window.innerHeight - rect.top + 6 : undefined,
         left: rect.left,
         width: rect.width,
+        isUp: openUpwards,
       });
     }
   }, []);
@@ -67,16 +79,18 @@ export function CustomSelect({ options, value, onChange, placeholder = 'Select..
       {isOpen && (
         <motion.div
           ref={dropdownRef}
-          initial={{ opacity: 0, y: -4, scaleY: 0.95 }}
+          initial={{ opacity: 0, y: pos.isUp ? 4 : -4, scaleY: 0.95 }}
           animate={{ opacity: 1, y: 0, scaleY: 1 }}
-          exit={{ opacity: 0, y: -4, scaleY: 0.95 }}
+          exit={{ opacity: 0, y: pos.isUp ? 4 : -4, scaleY: 0.95 }}
           transition={{ duration: 0.15, ease: 'easeOut' }}
-          className="fixed rounded-lg shadow-lg border origin-top overflow-hidden"
+          className="fixed rounded-lg shadow-lg border overflow-hidden"
           style={{
             top: pos.top,
+            bottom: pos.bottom,
             left: pos.left,
             width: pos.width,
             zIndex: 99999,
+            transformOrigin: pos.isUp ? 'bottom' : 'top',
             background: 'var(--bg3, var(--surface-raised))',
             borderColor: 'var(--border-strong)',
             boxShadow: '0 8px 32px rgba(0,0,0,.6), 0 0 20px rgba(139,92,246,.15)',

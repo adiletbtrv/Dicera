@@ -1,23 +1,34 @@
 import { useState } from 'react';
-import { api } from '@/lib/api.js';
-import { CustomSelect } from '@/components/ui/CustomSelect.js';
-import { useEncounterStore } from '@/store/encounter.js';
+import { CustomSelect } from '@/components/ui/CustomSelect';
+import { useEncounterStore } from '@/store/encounter';
 import { Swords, Plus, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface EncounterMonster { monster_id: string; monster_name: string; quantity: number; xp_each: number; cr: string }
 interface DifficultyResult { difficulty: string; totalXp: number; adjustedXp: number; xpPerPlayer: number }
 
+const XP_BY_CR: Record<string, number> = { '0': 10, '1/8': 25, '1/4': 50, '1/2': 100, '1': 200, '2': 450, '3': 700, '4': 1100, '5': 1800, '6': 2300, '7': 2900, '8': 3900, '9': 5000, '10': 5900 };
+
+const XP_THRESHOLDS: Record<string, [number, number, number, number]> = {
+  '1': [25, 50, 75, 100], '2': [50, 100, 150, 200], '3': [75, 150, 225, 400],
+  '4': [125, 250, 375, 500], '5': [250, 500, 750, 1100], '6': [300, 600, 900, 1400],
+  '7': [350, 750, 1100, 1700], '8': [450, 900, 1400, 2100], '9': [550, 1100, 1600, 2400],
+  '10': [600, 1200, 1900, 2800], '11': [800, 1600, 2400, 3600], '12': [1000, 2000, 3000, 4500],
+  '13': [1100, 2200, 3400, 5100], '14': [1250, 2500, 3800, 5700], '15': [1400, 2800, 4300, 6400],
+  '16': [1600, 3200, 4800, 7200], '17': [2000, 3900, 5900, 8800], '18': [2100, 4200, 6300, 9500],
+  '19': [2400, 4900, 7300, 10900], '20': [2800, 5700, 8500, 12700],
+};
+
+const MULT_TABLE = [[1], [1, 1.5], [1.5, 2], [2, 2, 2.5], [2, 2.5, 2.5, 3], [2.5, 2.5, 3, 3, 4]];
+
 export function EncounterBuilderPage() {
-  const { 
-    partySize, partyLevel, monsters, 
-    setPartySize, setPartyLevel, addCustomMonster, removeMonster 
+  const {
+    partySize, partyLevel, monsters,
+    setPartySize, setPartyLevel, addCustomMonster, removeMonster
   } = useEncounterStore();
-  
+
   const [result, setResult] = useState<DifficultyResult | null>(null);
   const [monsterInput, setMonsterInput] = useState({ name: '', cr: '1', qty: 1 });
-
-  const XP_BY_CR: Record<string, number> = { '0': 10, '1/8': 25, '1/4': 50, '1/2': 100, '1': 200, '2': 450, '3': 700, '4': 1100, '5': 1800, '6': 2300, '7': 2900, '8': 3900, '9': 5000, '10': 5900 };
 
   function addMonsterManual() {
     if (!monsterInput.name) return;
@@ -25,12 +36,27 @@ export function EncounterBuilderPage() {
     setMonsterInput({ name: '', cr: '1', qty: 1 });
   }
 
-  async function calculate() {
-    const res = await api.post<DifficultyResult>('/encounters/calculate', { monsters, party_size: partySize, party_level: partyLevel, name: 'calc' });
-    setResult(res);
+  function calculate() {
+    const totalXp = monsters.reduce((sum, m) => sum + ((m.xp_each || 0) * m.quantity), 0);
+    const monsterCount = monsters.reduce((sum, m) => sum + m.quantity, 0);
+
+    const multIdx = Math.min(5, monsterCount > 15 ? 5 : monsterCount > 10 ? 4 : monsterCount > 6 ? 3 : monsterCount > 2 ? 2 : monsterCount === 2 ? 1 : 0);
+    const mult = MULT_TABLE[multIdx]?.[Math.min(MULT_TABLE[multIdx]!.length - 1, Math.floor((partyLevel - 1) / 5))] ?? 1;
+
+    const adjustedXp = Math.round(totalXp * mult);
+    const xpPerPlayer = Math.round(adjustedXp / partySize);
+    const thresholds = (XP_THRESHOLDS[String(partyLevel)] ?? [0, 0, 0, 0]).map((t) => t * partySize);
+
+    let difficulty = 'trivial';
+    if (adjustedXp >= (thresholds[3] ?? 0)) difficulty = 'deadly';
+    else if (adjustedXp >= (thresholds[2] ?? 0)) difficulty = 'hard';
+    else if (adjustedXp >= (thresholds[1] ?? 0)) difficulty = 'medium';
+    else if (adjustedXp >= (thresholds[0] ?? 0)) difficulty = 'easy';
+
+    setResult({ difficulty, totalXp, adjustedXp, xpPerPlayer });
   }
 
-  const diffColors: Record<string, string> = { easy: '#4ade80', medium: '#facc15', hard: '#fb923c', deadly: '#f87171' };
+  const diffColors: Record<string, string> = { easy: '#4ade80', medium: '#facc15', hard: '#fb923c', deadly: '#f87171', trivial: 'var(--text-muted)' };
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -40,7 +66,7 @@ export function EncounterBuilderPage() {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="space-y-4">
-          <div className="card">
+          <div className="card hover:translate-y-0 hover:shadow-none">
             <h2 className="font-heading font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Party</h2>
             <div className="space-y-2">
               <div>
@@ -61,12 +87,12 @@ export function EncounterBuilderPage() {
               </div>
             </div>
           </div>
-          <div className="card">
+          <div className="card hover:translate-y-0 hover:shadow-none">
             <h2 className="font-heading font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Add Custom Monster</h2>
             <div className="space-y-3">
               <input type="text" placeholder="Monster name..." value={monsterInput.name} onChange={(e) => setMonsterInput((p) => ({ ...p, name: e.target.value }))} className="input w-full" />
-              <div className="flex gap-2">
-                <div className="flex-1">
+              <div className="flex gap-2 relative">
+                <div className="flex-1 min-w-[120px]">
                   <CustomSelect
                     value={monsterInput.cr}
                     onChange={(val) => setMonsterInput((p) => ({ ...p, cr: val }))}
@@ -80,12 +106,12 @@ export function EncounterBuilderPage() {
           </div>
         </div>
         <div className="md:col-span-2 space-y-4">
-          <div className="card">
+          <div className="card hover:translate-y-0 hover:shadow-none">
             <h2 className="font-heading font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Monsters ({monsters.length})</h2>
             {monsters.length === 0 ? <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No monsters added yet.</p> : (
               <div className="space-y-2">
-                {monsters.map((m, i) => (
-                  <div key={m.monster_id} className="flex items-center justify-between py-1.5 text-sm" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                {monsters.map((m) => (
+                  <div key={m.instance_id} className="flex items-center justify-between py-1.5 text-sm" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                     <span style={{ color: 'var(--text-primary)' }}>{m.quantity}x {m.monster_name}</span>
                     <span className="font-ui" style={{ color: 'var(--text-muted)' }}>CR {m.cr} · {(m.xp_each * m.quantity).toLocaleString()} XP</span>
                     <button onClick={() => removeMonster(m.instance_id)} className="btn-ghost p-1 rounded-lg"><X className="w-3.5 h-3.5" /></button>
@@ -101,7 +127,7 @@ export function EncounterBuilderPage() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="card"
+                className="card hover:translate-y-0 hover:shadow-none"
               >
                 <h2 className="font-heading font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Results</h2>
                 <div className="text-center py-4">

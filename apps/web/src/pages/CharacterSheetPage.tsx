@@ -150,7 +150,7 @@ export function CharacterSheetPage() {
         <div className="col-span-2 sm:col-span-4 bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 blur-3xl pointer-events-none" />
           <div className="flex items-center justify-between mb-1 relative z-10">
-            <p className="font-ui text-xs font-bold tracking-widest uppercase text-[var(--muted)] flex items-center gap-1"><Heart className="w-3 h-3 text-[var(--red2)]"/> Hit Points</p>
+            <p className="font-ui text-xs font-bold tracking-widest uppercase text-[var(--muted)] flex items-center gap-1"><Heart className="w-3 h-3 text-[var(--red2)]" /> Hit Points</p>
             {editHp ? (
               <div className="flex items-center gap-1">
                 <input autoFocus type="number" className="input text-center font-heading font-black text-lg w-16 px-1 py-0.5" defaultValue={data.current_hit_points} onChange={(e) => setHpInput(e.target.value)} />
@@ -181,7 +181,7 @@ export function CharacterSheetPage() {
                 {formatModifier(mod)}
               </p>
               <div className="mt-1 flex items-center justify-center gap-1">
-                <div className={`w-1.5 h-1.5 rounded-full ${isSaveProf ? 'bg-[var(--gold)] shadow-[0_0_4px_var(--gold)]' : 'bg-[var(--border)]'}`} title={isSaveProf ? `${ABILITY_LABELS[key]} Save Proficiency` : ''}/>
+                <div className={`w-1.5 h-1.5 rounded-full ${isSaveProf ? 'bg-[var(--gold)] shadow-[0_0_4px_var(--gold)]' : 'bg-[var(--border)]'}`} title={isSaveProf ? `${ABILITY_LABELS[key]} Save Proficiency` : ''} />
                 <span className="font-ui text-[0.6rem] text-[var(--muted)]">{formatModifier(saveBonus(key))}</span>
               </div>
             </div>
@@ -210,13 +210,13 @@ export function CharacterSheetPage() {
       {/* Panels */}
       <AnimatePresence mode="wait">
         <motion.div key={activeTab} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-          
+
           {activeTab === 'Overview' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 relative overflow-hidden">
                 <div className="absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent via-[var(--border2)] to-transparent opacity-50" />
                 <h3 className="font-ui text-[0.65rem] font-extrabold tracking-[0.25em] uppercase text-[var(--purple2)] mb-3 flex items-center gap-2">
-                  Saving Throws <div className="flex-1 h-px bg-[var(--border)]"/>
+                  Saving Throws <div className="flex-1 h-px bg-[var(--border)]" />
                 </h3>
                 <div className="grid grid-cols-2 gap-y-2 gap-x-4">
                   {SAVE_ABILITIES.map((ab) => {
@@ -235,7 +235,7 @@ export function CharacterSheetPage() {
               <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 relative overflow-hidden">
                 <div className="absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent via-[var(--border2)] to-transparent opacity-50" />
                 <h3 className="font-ui text-[0.65rem] font-extrabold tracking-[0.25em] uppercase text-[var(--purple2)] mb-3 flex items-center gap-2">
-                  Roleplay Info <div className="flex-1 h-px bg-[var(--border)]"/>
+                  Roleplay Info <div className="flex-1 h-px bg-[var(--border)]" />
                 </h3>
                 <table className="w-full text-left border-collapse">
                   <tbody>
@@ -245,8 +245,8 @@ export function CharacterSheetPage() {
                       ['Race', data.race_name],
                     ].map(([lbl, val], i) => (
                       <tr key={lbl}>
-                        <td className={`py-2 text-[0.65rem] font-ui font-bold tracking-[0.15em] uppercase text-[var(--muted)] ${i>0 ? 'border-t border-[var(--border)]/50' : ''} w-2/5`}>{lbl}</td>
-                        <td className={`py-2 text-sm font-body font-medium text-[var(--text)] ${i>0 ? 'border-t border-[var(--border)]/50' : ''}`}>{val}</td>
+                        <td className={`py-2 text-[0.65rem] font-ui font-bold tracking-[0.15em] uppercase text-[var(--muted)] ${i > 0 ? 'border-t border-[var(--border)]/50' : ''} w-2/5`}>{lbl}</td>
+                        <td className={`py-2 text-sm font-body font-medium text-[var(--text)] ${i > 0 ? 'border-t border-[var(--border)]/50' : ''}`}>{val}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -259,7 +259,7 @@ export function CharacterSheetPage() {
             <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 relative">
               <div className="absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent via-[var(--border2)] to-transparent opacity-50" />
               <h3 className="font-ui text-[0.65rem] font-extrabold tracking-[0.25em] uppercase text-[var(--purple2)] mb-4 flex items-center gap-2">
-                All Skills <div className="flex-1 h-px bg-[var(--border)]"/>
+                All Skills <div className="flex-1 h-px bg-[var(--border)]" />
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-1">
                 {SKILLS.map((skill) => {
@@ -310,7 +310,7 @@ export function CharacterSheetPage() {
             <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 relative">
               <div className="absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent via-[var(--border2)] to-transparent opacity-50" />
               <h3 className="font-ui text-[0.65rem] font-extrabold tracking-[0.25em] uppercase text-[var(--purple2)] mb-4 flex items-center gap-2">
-                Features & Traits <div className="flex-1 h-px bg-[var(--border)]"/>
+                Features & Traits <div className="flex-1 h-px bg-[var(--border)]" />
               </h3>
               {!data.features || data.features.length === 0 ? (
                 <p className="font-body text-sm text-[var(--muted)] italic">No features recorded.</p>
@@ -333,7 +333,7 @@ export function CharacterSheetPage() {
             <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 relative h-64">
               <div className="absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent via-[var(--border2)] to-transparent opacity-50" />
               <h3 className="font-ui text-[0.65rem] font-extrabold tracking-[0.25em] uppercase text-[var(--purple2)] mb-4 flex items-center gap-2">
-                Adventurer's Journal <div className="flex-1 h-px bg-[var(--border)]"/>
+                Adventurer's Journal <div className="flex-1 h-px bg-[var(--border)]" />
               </h3>
               <div className="h-full overflow-y-auto pr-2 custom-scrollbar">
                 <p className={`text-[0.85rem] leading-[1.8] font-body whitespace-pre-wrap ${data.notes ? 'text-[var(--text2)]' : 'text-[var(--muted)] italic'}`}>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '@/lib/api.js';
+import { api } from '@/lib/api';
 import { Shield, Search, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -37,16 +37,16 @@ export function ConditionsPage() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-2">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="card h-12 animate-pulse" />)}</div>
+        <div className="space-y-2">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="card h-12 animate-pulse hover:translate-y-0 hover:shadow-none" />)}</div>
       ) : (
         <div className="space-y-2">
           {conditions.map((cond) => {
             const color = CATEGORY_COLORS[cond.category] ?? 'var(--text-muted)';
             const isOpen = expanded === cond.id;
             return (
-              <div key={cond.id} className="card overflow-hidden">
+              <div key={cond.id} className="card overflow-hidden hover:translate-y-0 hover:shadow-none transition-none cursor-default">
                 <button
-                  className="w-full flex items-center gap-3 text-left"
+                  className="w-full flex items-center gap-3 text-left cursor-pointer focus:outline-none"
                   onClick={() => setExpanded(isOpen ? null : cond.id)}
                   aria-expanded={isOpen}
                 >

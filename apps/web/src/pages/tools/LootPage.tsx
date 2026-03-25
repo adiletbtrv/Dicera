@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Package, RefreshCw } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '@/lib/api.js';
+import { api } from '@/lib/api';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 const COINS_BY_CR: Record<string, [number, number, number, number, number]> = {
-  '0-4':  [6, 0, 0, 0, 0],
+  '0-4': [6, 0, 0, 0, 0],
   '5-10': [2, 3, 0, 0, 0],
-  '11-16':[0, 1, 2, 0, 0],
-  '17+':  [0, 0, 1, 1, 0],
+  '11-16': [0, 1, 2, 0, 0],
+  '17+': [0, 0, 1, 1, 0],
 };
 
 const MUNDANE_ITEMS = ['Rope (50 ft)', 'Torch (10)', 'Rations (3 days)', 'Healer\'s Kit', 'Crowbar', 'Superior Healing Potion', 'Tinderbox', 'Map and compass', 'Iron spikes (10)', 'Grappling hook'];
@@ -75,13 +76,15 @@ export function LootPage() {
         <Package className="w-7 h-7" style={{ color: 'var(--gold)' }} />
         <h1 className="font-heading text-3xl font-bold">Loot Generator</h1>
       </div>
-      <div className="card mb-6 space-y-4">
+      <div className="card mb-6 space-y-4 hover:border-[var(--border)] hover:translate-y-0">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="label">CR Range</label>
-            <select className="input" value={cr} onChange={(e) => setCr(e.target.value)}>
-              {Object.keys(COINS_BY_CR).map((k) => <option key={k} value={k}>{k}</option>)}
-            </select>
+            <CustomSelect
+              value={cr}
+              onChange={setCr}
+              options={Object.keys(COINS_BY_CR).map(k => ({ value: k, label: `CR ${k}` }))}
+            />
           </div>
           <div>
             <label className="label">Party Size</label>
@@ -98,7 +101,7 @@ export function LootPage() {
       </div>
       {result && (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-          <div className="card">
+          <div className="card hover:border-[var(--border)] hover:translate-y-0">
             <h2 className="font-heading font-semibold mb-4">Currency</h2>
             <div className="grid grid-cols-5 gap-3">
               {[result.cp, result.sp, result.ep, result.gp, result.pp].map((amt, i) => (
@@ -110,13 +113,13 @@ export function LootPage() {
             </div>
           </div>
           {result.mundane.length > 0 && (
-            <div className="card">
+            <div className="card hover:border-[var(--border)] hover:translate-y-0">
               <h2 className="font-heading font-semibold mb-3">Mundane Items</h2>
               <ul className="space-y-1">{result.mundane.map((item, i) => <li key={i} className="text-sm" style={{ color: 'var(--text-secondary)' }}>• {item}</li>)}</ul>
             </div>
           )}
           {result.magic.length > 0 && (
-            <div className="card">
+            <div className="card hover:border-[var(--border)] hover:translate-y-0">
               <h2 className="font-heading font-semibold mb-3">Magic Items</h2>
               {result.magic.map((item, i) => (
                 <div key={i} className="flex items-center gap-3">

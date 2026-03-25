@@ -1,15 +1,11 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '@/lib/api.js';
+import { api } from '@/lib/api';
 import { ChevronLeft, ZoomIn, ZoomOut, RotateCcw, Download, MapPin, Trash2, Edit2, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-interface MapData {
-  id: string; name: string; description?: string; image_url?: string;
-  tags?: string[]; width?: number; height?: number;
-}
-
+interface MapData { id: string; name: string; description?: string; image_url?: string; tags?: string[]; width?: number; height?: number; }
 type Pin = { id: string; x: number; y: number; label: string; color: string; size: number };
 const PIN_COLORS = ['#ef4444', '#22c55e', '#3b82f6', '#f59e0b', '#a855f7'];
 const PIN_SIZES = [16, 24, 32, 48];
@@ -19,12 +15,12 @@ export function MapDetailPage() {
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
-  
+
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  
+
   const [pins, setPins] = useState<Pin[]>([]);
   const [pinMode, setPinMode] = useState(false);
   const [pinForm, setPinForm] = useState({ color: PIN_COLORS[0]!, size: 24, label: '' });
@@ -46,16 +42,12 @@ export function MapDetailPage() {
   }, [data?.image_url]);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setPinMode(false);
-    };
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setPinMode(false); };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  function handleZoom(delta: number) {
-    setScale((s) => Math.max(0.25, Math.min(5, s + delta)));
-  }
+  function handleZoom(delta: number) { setScale((s) => Math.max(0.25, Math.min(5, s + delta))); }
 
   function handleMouseDown(e: React.MouseEvent) {
     if (pinMode || editingPin) return;
@@ -75,32 +67,24 @@ export function MapDetailPage() {
     const container = containerRef.current;
     if (!container) return;
     const rect = container.getBoundingClientRect();
-    
-    // Calculate click coordinates relative to the container
+
     const clickX = e.clientX - rect.left;
     const clickY = e.clientY - rect.top;
-    
-    // Reverse the transform to find the pixel coordinate on the original image
     const imgX = (clickX - offset.x) / scale;
     const imgY = (clickY - offset.y) / scale;
-    
-    // Convert to a ratio relative to the natural image dimensions
+
     const img = imgRef.current;
     if (!img || !imgLoaded) return;
-    
-    const ratioX = imgX / img.naturalWidth;
-    const ratioY = imgY / img.naturalHeight;
-    
-    // Create new pin
+
     const newPin: Pin = {
-      id: Math.random().toString(36).substr(2, 9),
-      x: ratioX,
-      y: ratioY,
-      label: pinForm.label || `Pin ${pins.length + 1}`,
+      id: Math.random().toString(36).substring(2, 9),
+      x: imgX / img.naturalWidth,
+      y: imgY / img.naturalHeight,
+      label: pinForm.label,
       color: pinForm.color,
       size: pinForm.size,
     };
-    
+
     setPins((prev) => [...prev, newPin]);
     setPinMode(false);
     setPinForm({ ...pinForm, label: '' });
@@ -109,41 +93,6 @@ export function MapDetailPage() {
   function handleWheel(e: React.WheelEvent) {
     e.preventDefault();
     handleZoom(e.deltaY < 0 ? 0.1 : -0.1);
-  }
-
-  function handleExport() {
-    // Generate a quick canvas export combining the image and pins
-    const canvas = document.createElement('canvas');
-    if (!imgRef.current || !imgLoaded) return;
-    const img = imgRef.current;
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    
-    ctx.drawImage(img, 0, 0);
-    pins.forEach((pin) => {
-      const px = pin.x * img.naturalWidth;
-      const py = pin.y * img.naturalHeight;
-      ctx.beginPath();
-      ctx.arc(px, py, pin.size / 2, 0, Math.PI * 2);
-      ctx.fillStyle = pin.color;
-      ctx.fill();
-      ctx.strokeStyle = 'white';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      if (pin.label) {
-        ctx.font = `${Math.max(16, pin.size / 1.5)}px sans-serif`;
-        ctx.fillStyle = 'white';
-        ctx.textAlign = 'center';
-        ctx.fillText(pin.label, px, py - pin.size / 2 - 4);
-      }
-    });
-
-    const link = document.createElement('a');
-    link.download = `${data?.name ?? 'map'}.png`;
-    link.href = canvas.toDataURL();
-    link.click();
   }
 
   function saveEditedPin() {
@@ -169,29 +118,26 @@ export function MapDetailPage() {
         </button>
         <h1 className="font-heading text-2xl font-bold flex-1">{data.name}</h1>
         <div className="flex items-center gap-2">
-          <button onClick={() => handleZoom(0.25)} className="btn-secondary p-2" title="Zoom In"><ZoomIn className="w-4 h-4" /></button>
-          <button onClick={() => handleZoom(-0.25)} className="btn-secondary p-2" title="Zoom Out"><ZoomOut className="w-4 h-4" /></button>
-          <button onClick={() => { setScale(1); setOffset({ x: 0, y: 0 }); }} className="btn-secondary p-2" title="Reset details view"><RotateCcw className="w-4 h-4" /></button>
-          
+          <button onClick={() => handleZoom(0.25)} className="btn-secondary p-2"><ZoomIn className="w-4 h-4" /></button>
+          <button onClick={() => handleZoom(-0.25)} className="btn-secondary p-2"><ZoomOut className="w-4 h-4" /></button>
+          <button onClick={() => { setScale(1); setOffset({ x: 0, y: 0 }); }} className="btn-secondary p-2"><RotateCcw className="w-4 h-4" /></button>
+
           <div className="h-6 w-px bg-white/10 mx-1" />
-          
+
           <div className="flex gap-1 bg-white/5 rounded-full p-1 border border-white/10">
             {PIN_COLORS.map((c) => (
-              <button key={c} onClick={() => { setPinForm({...pinForm, color: c}); setPinMode(true); setEditingPin(null); }} className="w-6 h-6 rounded-full border-2 transition-transform hover:scale-110" style={{ background: c, borderColor: pinForm.color === c && pinMode ? 'white' : 'transparent' }} title={`Place ${c} pin`} />
+              <button key={c} onClick={() => { setPinForm({ ...pinForm, color: c }); setPinMode(true); setEditingPin(null); }} className="w-6 h-6 rounded-full border-2" style={{ background: c, borderColor: pinForm.color === c && pinMode ? 'white' : 'transparent' }} />
             ))}
           </div>
           {pinMode && (
-             <div className="flex items-center gap-2">
-               <input className="input px-2 py-1 text-sm w-32" placeholder="Pin label..." value={pinForm.label} onChange={(e) => setPinForm({...pinForm, label: e.target.value})} autoFocus />
-               <select className="input px-2 py-1 text-sm w-20" value={pinForm.size} onChange={(e) => setPinForm({...pinForm, size: Number(e.target.value)})}>
-                 {PIN_SIZES.map(s => <option key={s} value={s}>{s}px</option>)}
-               </select>
-             </div>
+            <div className="flex items-center gap-2">
+              <input className="input px-2 py-1 text-sm w-32" placeholder="Pin label..." value={pinForm.label} onChange={(e) => setPinForm({ ...pinForm, label: e.target.value })} autoFocus />
+              <select className="input px-2 py-1 text-sm w-20" value={pinForm.size} onChange={(e) => setPinForm({ ...pinForm, size: Number(e.target.value) })}>
+                {PIN_SIZES.map(s => <option key={s} value={s}>{s}px</option>)}
+              </select>
+            </div>
           )}
-          {pins.length > 0 && <button onClick={() => { if(confirm('Clear all pins?')) setPins([]); }} className="btn-secondary text-xs px-2">Clear Pins</button>}
-          <button onClick={handleExport} className="btn-secondary p-2" title="Export as PNG"><Download className="w-4 h-4" /></button>
         </div>
-        <span className="text-xs font-ui min-w-[40px] text-right" style={{ color: 'var(--text-muted)' }}>{Math.round(scale * 100)}%</span>
       </div>
 
       <div
@@ -206,108 +152,77 @@ export function MapDetailPage() {
         onWheel={handleWheel}
       >
         {!data.image_url ? (
-           <div className="absolute inset-0 flex items-center justify-center text-white/30 font-ui font-medium">No map image uploaded</div>
+          <div className="absolute inset-0 flex items-center justify-center text-white/30 font-ui font-medium">No map image uploaded</div>
         ) : !imgLoaded ? (
-           <div className="absolute inset-0 flex items-center justify-center text-white/30 font-ui font-medium">Loading map...</div>
+          <div className="absolute inset-0 flex items-center justify-center text-white/30 font-ui font-medium">Loading map...</div>
         ) : (
-           <div 
-             className="absolute"
-             style={{
-               left: offset.x,
-               top: offset.y,
-               transformOrigin: '0 0',
-               transform: `scale(${scale})`,
-               width: imgRef.current?.naturalWidth,
-               height: imgRef.current?.naturalHeight,
-               backgroundImage: `url(${data.image_url})`,
-               backgroundSize: '100% 100%',
-               backgroundRepeat: 'no-repeat'
-             }}
-           />
+          <div
+            className="absolute"
+            style={{
+              left: offset.x, top: offset.y, transformOrigin: '0 0', transform: `scale(${scale})`,
+              width: imgRef.current?.naturalWidth, height: imgRef.current?.naturalHeight,
+              backgroundImage: `url(${data.image_url})`, backgroundSize: '100% 100%', backgroundRepeat: 'no-repeat'
+            }}
+          />
         )}
 
-        {/* Pins Rendered as DOM elements over the image wrapper */}
         {imgLoaded && imgRef.current && pins.map(pin => {
           const px = offset.x + pin.x * imgRef.current!.naturalWidth * scale;
           const py = offset.y + pin.y * imgRef.current!.naturalHeight * scale;
-          
           return (
-            <div 
-              key={pin.id} 
-              className="absolute z-10 transition-transform hover:scale-110"
-              style={{ left: px, top: py, transform: 'translate(-50%, -100%)' }}
-            >
-              <div 
-                className="relative group cursor-pointer filter drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]"
-                onClick={(e) => { e.stopPropagation(); setEditingPin(pin); setPinMode(false); }}
-              >
+            <div key={pin.id} className="absolute z-10 transition-transform hover:scale-110" style={{ left: px, top: py, transform: 'translate(-50%, -100%)' }}>
+              <div className="relative group cursor-pointer filter drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]" onClick={(e) => { e.stopPropagation(); setEditingPin(pin); setPinMode(false); }}>
                 <MapPin style={{ color: pin.color, fill: pin.color, width: pin.size, height: pin.size }} />
-                {pin.label && (
-                  <span className="absolute top-full left-1/2 -translate-x-1/2 mt-0.5 text-xs font-bold text-white drop-shadow-[0_2px_2px_rgba(0,0,0,1)] whitespace-nowrap pointer-events-none">
-                    {pin.label}
-                  </span>
-                )}
+                {pin.label && <span className="absolute top-full left-1/2 -translate-x-1/2 mt-0.5 text-xs font-bold text-white drop-shadow-[0_2px_2px_rgba(0,0,0,1)] whitespace-nowrap pointer-events-none">{pin.label}</span>}
               </div>
             </div>
           );
         })}
+      </div>
 
-        {/* Pin Editor Popover */}
-        <AnimatePresence>
-          {editingPin && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 10 }}
-              className="absolute z-20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 card shadow-2xl space-y-3 min-w-[280px]"
-              style={{ border: `1px solid ${editingPin.color}` }}
+      <AnimatePresence>
+        {editingPin && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setEditingPin(null)}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="card shadow-2xl space-y-4 min-w-[320px]"
+              style={{ border: `2px solid ${editingPin.color}` }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-heading font-bold text-lg">Edit Pin</h3>
-                <button onClick={() => setEditingPin(null)} className="btn-ghost p-1"><X className="w-4 h-4" /></button>
+                <button onClick={() => setEditingPin(null)} className="btn-ghost p-1"><X className="w-5 h-5" /></button>
               </div>
               <div>
-                <label className="label text-xs">Label</label>
-                <input autoFocus className="input" value={editingPin.label} onChange={(e) => setEditingPin({...editingPin, label: e.target.value})} />
+                <label className="label text-sm">Label</label>
+                <input autoFocus className="input" value={editingPin.label} onChange={(e) => setEditingPin({ ...editingPin, label: e.target.value })} />
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-4">
                 <div className="flex-1">
-                  <label className="label text-xs">Color</label>
-                  <div className="flex gap-1.5 flex-wrap">
-                    {PIN_COLORS.map(c => 
-                      <button key={c} onClick={() => setEditingPin({...editingPin, color: c})} className="w-6 h-6 rounded-full border-2" style={{ background: c, borderColor: editingPin.color === c ? 'white' : 'transparent' }} />
+                  <label className="label text-sm">Color</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {PIN_COLORS.map(c =>
+                      <button key={c} onClick={() => setEditingPin({ ...editingPin, color: c })} className="w-8 h-8 rounded-full border-2" style={{ background: c, borderColor: editingPin.color === c ? 'white' : 'transparent' }} />
                     )}
                   </div>
                 </div>
                 <div>
-                  <label className="label text-xs">Size</label>
-                  <select className="input px-2 py-1 text-sm h-7" value={editingPin.size} onChange={(e) => setEditingPin({...editingPin, size: Number(e.target.value)})}>
+                  <label className="label text-sm">Size</label>
+                  <select className="input px-2 py-2 text-sm" value={editingPin.size} onChange={(e) => setEditingPin({ ...editingPin, size: Number(e.target.value) })}>
                     {PIN_SIZES.map(s => <option key={s} value={s}>{s}px</option>)}
                   </select>
                 </div>
               </div>
               <div className="flex justify-between pt-4 mt-2 border-t border-white/10">
-                <button onClick={deleteEditedPin} className="btn-ghost text-red-400 p-1 flex items-center gap-1 text-xs"><Trash2 className="w-4 h-4" /> Delete</button>
-                <button onClick={saveEditedPin} className="btn-primary py-1 px-3 flex items-center gap-1 text-sm"><Check className="w-4 h-4" /> Done</button>
+                <button onClick={deleteEditedPin} className="btn-ghost text-red-400 px-3 flex items-center gap-2"><Trash2 className="w-4 h-4" /> Delete</button>
+                <button onClick={saveEditedPin} className="btn-primary px-4 flex items-center gap-2"><Check className="w-4 h-4" /> Save</button>
               </div>
             </motion.div>
-          )}
-        </AnimatePresence>
-
-        {pinMode && (
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl text-sm font-ui backdrop-blur-sm pointer-events-none" style={{ background: 'rgba(0,0,0,0.6)', color: 'white' }}>
-            Click to place pin — press Esc to cancel
           </div>
         )}
-        <div className="absolute bottom-3 left-3 flex gap-2">
-           <button onClick={() => handleZoom(0.25)} className="btn-secondary rounded-full w-8 h-8 flex items-center justify-center bg-black/50 backdrop-blur"><ZoomIn className="w-4 h-4 text-white" /></button>
-           <button onClick={() => handleZoom(-0.25)} className="btn-secondary rounded-full w-8 h-8 flex items-center justify-center bg-black/50 backdrop-blur"><ZoomOut className="w-4 h-4 text-white" /></button>
-        </div>
-        <div className="absolute bottom-3 right-3 text-xs font-ui px-3 py-1.5 rounded-lg pointer-events-none" style={{ background: 'rgba(0,0,0,0.5)', color: 'rgba(255,255,255,0.6)' }}>
-          {pins.length} pin{pins.length !== 1 ? 's' : ''} &bull; scroll to zoom &bull; drag to pan
-        </div>
-      </div>
+      </AnimatePresence>
     </div>
   );
 }

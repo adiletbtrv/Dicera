@@ -1,16 +1,16 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { api } from '@/lib/api.js';
-import { CustomSelect } from '@/components/ui/CustomSelect.js';
+import { api } from '@/lib/api';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import { Wand2, ChevronLeft, Save, Plus, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useToastStore } from '@/store/toast.js';
+import { useToastStore } from '@/store/toast';
 
 type HomebrewType = 'spell' | 'monster' | 'item' | 'class' | 'subclass' | 'race' | 'background' | 'feat' | 'rule';
 
-interface SpellContent { level: number; school: string; casting_time: string; range: string; components: string; duration: string; concentration: boolean }
-interface MonsterContent { challenge_rating: string; creature_type: string; hit_dice: string; ac: number; speed: string }
+interface SpellContent { level: string | number; school: string; casting_time: string; range: string; components: string; duration: string; concentration: boolean }
+interface MonsterContent { challenge_rating: string; creature_type: string; hit_dice: string; ac: string | number; speed: string }
 interface ItemContent { rarity: string; item_type: string; requires_attunement: boolean }
 
 const TYPE_OPTIONS: { value: string; label: string }[] = [
@@ -27,7 +27,7 @@ function SpellFields({ value, onChange }: { value: SpellContent; onChange: (v: S
       {([['level', 'Level (0-9)', 'number'], ['school', 'School', 'text'], ['casting_time', 'Casting Time', 'text'], ['range', 'Range', 'text'], ['components', 'Components (V, S, M)', 'text'], ['duration', 'Duration', 'text']] as const).map(([key, label, type]) => (
         <div key={key}>
           <label className="label text-xs">{label}</label>
-          <input type={type} className="input" value={value[key] as string} onChange={(e) => onChange({ ...value, [key]: type === 'number' ? +e.target.value : e.target.value })} />
+          <input type={type} className="input uppercase" value={value[key as keyof SpellContent] as string} onChange={(e) => onChange({ ...value, [key]: type === 'number' ? (e.target.value === '' ? '' : +e.target.value) : e.target.value })} />
         </div>
       ))}
       <div className="flex items-center gap-2 col-span-2 md:col-span-3">
@@ -49,18 +49,24 @@ function MonsterFields({ value, onChange }: { value: MonsterContent; onChange: (
       ))}
       <div>
         <label className="label text-xs">Armor Class</label>
-        <input type="number" className="input" value={value.ac} onChange={(e) => onChange({ ...value, ac: +e.target.value })} />
+        <input type="number" className="input" value={value.ac} onChange={(e) => onChange({ ...value, ac: e.target.value === '' ? '' : +e.target.value })} />
       </div>
     </div>
   );
 }
 
 function ItemFields({ value, onChange }: { value: ItemContent; onChange: (v: ItemContent) => void }) {
+  // Automatically capitalize words like "Very Rare"
+  const rarityOptions = ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact'].map(r => ({
+    value: r,
+    label: r.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+  }));
+
   return (
     <div className="grid grid-cols-2 gap-3">
       <div>
         <label className="label text-xs">Rarity</label>
-        <CustomSelect value={value.rarity} onChange={(v) => onChange({ ...value, rarity: v })} options={['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact'].map((r) => ({ value: r, label: r }))} />
+        <CustomSelect value={value.rarity} onChange={(v) => onChange({ ...value, rarity: v })} options={rarityOptions} />
       </div>
       <div>
         <label className="label text-xs">Item Type</label>
@@ -75,17 +81,35 @@ function ItemFields({ value, onChange }: { value: ItemContent; onChange: (v: Ite
 }
 
 export function HomebrewBuilderPage() {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const toast = useToastStore((s) => s.add);
+
   const [type, setType] = useState<HomebrewType>('spell');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isPublic, setIsPublic] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
-  const [spellContent, setSpellContent] = useState<SpellContent>({ level: 0, school: '', casting_time: '1 action', range: '30 feet', components: 'V, S', duration: 'Instantaneous', concentration: false });
-  const [monsterContent, setMonsterContent] = useState<MonsterContent>({ challenge_rating: '1', creature_type: 'Beast', hit_dice: '4d8', ac: 13, speed: '30 ft' });
-  const [itemContent, setItemContent] = useState<ItemContent>({ rarity: 'uncommon', item_type: 'Wondrous Item', requires_attunement: false });
+
+  const [spellContent, setSpellContent] = useState<SpellContent>({ level: '', school: '', casting_time: '', range: '', components: '', duration: '', concentration: false });
+  const [monsterContent, setMonsterContent] = useState<MonsterContent>({ challenge_rating: '', creature_type: '', hit_dice: '', ac: '', speed: '' });
+  const [itemContent, setItemContent] = useState<ItemContent>({ rarity: 'uncommon', item_type: '', requires_attunement: false });
+
+  useEffect(() => {
+    if (id) {
+      api.get<any>(`/homebrew/${id}`).then((res) => {
+        setName(res.name);
+        setType(res.type as HomebrewType);
+        setDescription(res.description || '');
+        setIsPublic(res.is_public);
+        setTags(res.tags || []);
+        if (res.type === 'spell') setSpellContent(res.content);
+        if (res.type === 'monster') setMonsterContent(res.content);
+        if (res.type === 'item') setItemContent(res.content);
+      }).catch(() => toast({ type: 'error', message: 'Failed to load homebrew for editing', duration: 3000 }));
+    }
+  }, [id, toast]);
 
   function addTag() {
     const t = tagInput.trim();
@@ -93,16 +117,41 @@ export function HomebrewBuilderPage() {
     setTagInput('');
   }
 
+  function validate() {
+    if (!name.trim()) { toast({ type: 'error', message: 'Name is required.', duration: 3000 }); return false; }
+
+    if (type === 'spell') {
+      const compStr = spellContent.components.toUpperCase();
+      // Only allow V, S, M, spaces, commas, and parentheses for materials
+      const baseComps = compStr.replace(/\(.*?\)/g, '');
+      if (/[^VSM\s,]/.test(baseComps)) {
+        toast({ type: 'error', message: 'Spell components can only contain V, S, M (and material descriptions inside parentheses).', duration: 5000 });
+        return false;
+      }
+      if (spellContent.level === '' || !spellContent.school || !spellContent.casting_time) {
+        toast({ type: 'error', message: 'Please fill out all required spell fields.', duration: 3000 });
+        return false;
+      }
+    }
+    return true;
+  }
+
   const saveMut = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
+      if (!validate()) throw new Error('Validation failed');
       const content = type === 'spell' ? spellContent : type === 'monster' ? monsterContent : type === 'item' ? itemContent : {};
-      return api.post('/homebrew', { name, type, description, is_public: isPublic, content, tags, version: '1.0' });
+      const payload = { name, type, description, is_public: isPublic, content, tags, version: '1.0' };
+
+      if (id) return api.patch(`/homebrew/${id}`, payload);
+      return api.post('/homebrew', payload);
     },
     onSuccess: () => {
-      toast({ type: 'success', message: 'Homebrew created!', duration: 3000 });
+      toast({ type: 'success', message: id ? 'Homebrew updated!' : 'Homebrew created!', duration: 3000 });
       navigate('/homebrew');
     },
-    onError: () => toast({ type: 'error', message: 'Failed to save homebrew', duration: 3000 }),
+    onError: (e: any) => {
+      if (e.message !== 'Validation failed') toast({ type: 'error', message: 'Failed to save homebrew', duration: 3000 });
+    },
   });
 
   return (
@@ -112,7 +161,7 @@ export function HomebrewBuilderPage() {
       </button>
       <div className="flex items-center gap-3 mb-6">
         <Wand2 className="w-8 h-8" style={{ color: 'var(--accent)' }} />
-        <h1 className="font-heading text-3xl font-bold">Create Homebrew</h1>
+        <h1 className="font-heading text-3xl font-bold">{id ? 'Edit Homebrew' : 'Create Homebrew'}</h1>
       </div>
 
       <form onSubmit={(e) => { e.preventDefault(); saveMut.mutate(); }} className="space-y-4">
@@ -164,8 +213,8 @@ export function HomebrewBuilderPage() {
         </AnimatePresence>
 
         <div className="flex justify-end">
-          <button type="submit" disabled={saveMut.isPending || !name.trim()} className="btn-primary flex items-center gap-2">
-            <Save className="w-4 h-4" /> {saveMut.isPending ? 'Publishing...' : 'Publish Homebrew'}
+          <button type="submit" disabled={saveMut.isPending} className="btn-primary flex items-center gap-2">
+            <Save className="w-4 h-4" /> {saveMut.isPending ? 'Saving...' : (id ? 'Save Changes' : 'Publish Homebrew')}
           </button>
         </div>
       </form>

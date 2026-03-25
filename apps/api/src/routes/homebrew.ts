@@ -28,8 +28,18 @@ const FilterSchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
 
+// Auto-migrate liked_by column safely if it's missing
+async function ensureLikedByColumn() {
+  try {
+    await query("ALTER TABLE homebrew ADD COLUMN IF NOT EXISTS liked_by UUID[] DEFAULT '{}'");
+  } catch (e) {
+    // ignore
+  }
+}
+
 router.get('/', optionalAuth, async (req, res, next) => {
   try {
+    await ensureLikedByColumn();
     const filters = FilterSchema.parse(req.query);
     const conditions: string[] = [];
     const params: unknown[] = [];
@@ -66,7 +76,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
 
     const [rows, countResult] = await Promise.all([
       query(
-        `SELECT id, type, name, description, tags, is_public, status, likes, views, version, creator_id, created_at
+        `SELECT id, type, name, description, tags, is_public, status, likes, views, version, creator_id, created_at, liked_by
          FROM homebrew ${where} ORDER BY updated_at DESC LIMIT $${p} OFFSET $${p + 1}`,
         [...params, filters.limit, offset],
       ),
@@ -86,6 +96,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
 
 router.get('/:id', optionalAuth, async (req, res, next) => {
   try {
+    await ensureLikedByColumn();
     const hb = await queryOne(
       `SELECT * FROM homebrew WHERE id = $1 AND (is_public = true OR creator_id = $2)`,
       [req.params['id'], req.user?.id ?? '00000000-0000-0000-0000-000000000000'],
@@ -166,8 +177,18 @@ router.delete('/:id', requireAuth, async (req, res, next) => {
 
 router.post('/:id/like', requireAuth, async (req, res, next) => {
   try {
-    await query('UPDATE homebrew SET likes = likes + 1 WHERE id = $1', [req.params['id']]);
-    res.json({ success: true });
+    await ensureLikedByColumn();
+    const hb = await queryOne('SELECT liked_by FROM homebrew WHERE id = $1', [req.params['id']]);
+    if (!hb) throw new ApiError(404, 'Homebrew not found');
+
+    const likedBy = hb.liked_by || [];
+    if (likedBy.includes(req.user!.id)) {
+      await query('UPDATE homebrew SET likes = GREATEST(likes - 1, 0), liked_by = array_remove(liked_by, $2) WHERE id = $1', [req.params['id'], req.user!.id]);
+      res.json({ liked: false });
+    } else {
+      await query('UPDATE homebrew SET likes = likes + 1, liked_by = array_append(liked_by, $2) WHERE id = $1', [req.params['id'], req.user!.id]);
+      res.json({ liked: true });
+    }
   } catch (err) {
     next(err);
   }

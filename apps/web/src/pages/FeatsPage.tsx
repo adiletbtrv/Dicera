@@ -49,10 +49,6 @@ export function FeatsPage() {
               <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>{feat.source}</p>
             </Link>
           ))}
-              <p className="text-sm leading-relaxed line-clamp-3" style={{ color: 'var(--text-secondary)' }}>{feat.description}</p>
-              <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>{feat.source}</p>
-            </div>
-          ))}
         </motion.div>
       )}
     </div>

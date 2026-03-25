@@ -1,53 +1,55 @@
-import { lazy, Suspense, useState, useEffect } from 'react';
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { Layout } from '@/components/layout/Layout.js';
-import { ErrorBoundary } from '@/components/ErrorBoundary.js';
-import { useAuthStore } from '@/store/auth.js';
+import { Layout } from '@/components/layout/Layout';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { useAuthStore } from '@/store/auth';
 
-const HomePage = lazy(() => import('@/pages/HomePage.js').then((m) => ({ default: m.HomePage })));
-const SpellsPage = lazy(() => import('@/pages/SpellsPage.js').then((m) => ({ default: m.SpellsPage })));
-const SpellDetailPage = lazy(() => import('@/pages/SpellDetailPage.js').then((m) => ({ default: m.SpellDetailPage })));
-const BestiaryPage = lazy(() => import('@/pages/BestiaryPage.js').then((m) => ({ default: m.BestiaryPage })));
-const MonsterDetailPage = lazy(() => import('@/pages/MonsterDetailPage.js').then((m) => ({ default: m.MonsterDetailPage })));
-const CharactersPage = lazy(() => import('@/pages/CharactersPage.js').then((m) => ({ default: m.CharactersPage })));
-const CharacterBuilderPage = lazy(() => import('@/pages/CharacterBuilderPage.js').then((m) => ({ default: m.CharacterBuilderPage })));
-const CharacterSheetPage = lazy(() => import('@/pages/CharacterSheetPage.js').then((m) => ({ default: m.CharacterSheetPage })));
-const CampaignsPage = lazy(() => import('@/pages/CampaignsPage.js').then((m) => ({ default: m.CampaignsPage })));
-const CampaignBuilderPage = lazy(() => import('@/pages/CampaignBuilderPage.js').then((m) => ({ default: m.CampaignBuilderPage })));
-const CampaignDetailPage = lazy(() => import('@/pages/CampaignDetailPage.js').then((m) => ({ default: m.CampaignDetailPage })));
-const EncounterBuilderPage = lazy(() => import('@/pages/EncounterBuilderPage.js').then((m) => ({ default: m.EncounterBuilderPage })));
-const DiceRollerPage = lazy(() => import('@/pages/DiceRollerPage.js').then((m) => ({ default: m.DiceRollerPage })));
-const MapsPage = lazy(() => import('@/pages/MapsPage.js').then((m) => ({ default: m.MapsPage })));
-const MapUploaderPage = lazy(() => import('@/pages/MapUploaderPage.js').then((m) => ({ default: m.MapUploaderPage })));
-const MapDetailPage = lazy(() => import('@/pages/MapDetailPage.js').then((m) => ({ default: m.MapDetailPage })));
-const HomebrewPage = lazy(() => import('@/pages/HomebrewPage.js').then((m) => ({ default: m.HomebrewPage })));
-const HomebrewBuilderPage = lazy(() => import('@/pages/HomebrewBuilderPage.js').then((m) => ({ default: m.HomebrewBuilderPage })));
-const AiPage = lazy(() => import('@/pages/AiPage.js').then((m) => ({ default: m.AiPage })));
-const LoginPage = lazy(() => import('@/pages/LoginPage.js').then((m) => ({ default: m.LoginPage })));
-const RegisterPage = lazy(() => import('@/pages/RegisterPage.js').then((m) => ({ default: m.RegisterPage })));
-const NotFoundPage = lazy(() => import('@/pages/NotFoundPage.js').then((m) => ({ default: m.NotFoundPage })));
+const HomePage = lazy(() => import('@/pages/HomePage').then((m) => ({ default: m.HomePage })));
+const SpellsPage = lazy(() => import('@/pages/SpellsPage').then((m) => ({ default: m.SpellsPage })));
+const SpellDetailPage = lazy(() => import('@/pages/SpellDetailPage').then((m) => ({ default: m.SpellDetailPage })));
+const BestiaryPage = lazy(() => import('@/pages/BestiaryPage').then((m) => ({ default: m.BestiaryPage })));
+const MonsterDetailPage = lazy(() => import('@/pages/MonsterDetailPage').then((m) => ({ default: m.MonsterDetailPage })));
+const CharactersPage = lazy(() => import('@/pages/CharactersPage').then((m) => ({ default: m.CharactersPage })));
+const CharacterBuilderPage = lazy(() => import('@/pages/CharacterBuilderPage').then((m) => ({ default: m.CharacterBuilderPage })));
+const CharacterSheetPage = lazy(() => import('@/pages/CharacterSheetPage').then((m) => ({ default: m.CharacterSheetPage })));
+const CampaignsPage = lazy(() => import('@/pages/CampaignsPage').then((m) => ({ default: m.CampaignsPage })));
+const CampaignBuilderPage = lazy(() => import('@/pages/CampaignBuilderPage').then((m) => ({ default: m.CampaignBuilderPage })));
+const CampaignDetailPage = lazy(() => import('@/pages/CampaignDetailPage').then((m) => ({ default: m.CampaignDetailPage })));
+const EncounterBuilderPage = lazy(() => import('@/pages/EncounterBuilderPage').then((m) => ({ default: m.EncounterBuilderPage })));
+const DiceRollerPage = lazy(() => import('@/pages/DiceRollerPage').then((m) => ({ default: m.DiceRollerPage })));
+const MapsPage = lazy(() => import('@/pages/MapsPage').then((m) => ({ default: m.MapsPage })));
+const MapUploaderPage = lazy(() => import('@/pages/MapUploaderPage').then((m) => ({ default: m.MapUploaderPage })));
+const MapDetailPage = lazy(() => import('@/pages/MapDetailPage').then((m) => ({ default: m.MapDetailPage })));
+const HomebrewPage = lazy(() => import('@/pages/HomebrewPage').then((m) => ({ default: m.HomebrewPage })));
+const HomebrewBuilderPage = lazy(() => import('@/pages/HomebrewBuilderPage').then((m) => ({ default: m.HomebrewBuilderPage })));
+const HomebrewDetailPage = lazy(() => import('@/pages/HomebrewDetailPage').then((m) => ({ default: m.HomebrewDetailPage })));
+const AiPage = lazy(() => import('@/pages/AiPage').then((m) => ({ default: m.AiPage })));
+const LoginPage = lazy(() => import('@/pages/LoginPage').then((m) => ({ default: m.LoginPage })));
+const RegisterPage = lazy(() => import('@/pages/RegisterPage').then((m) => ({ default: m.RegisterPage })));
+const NotFoundPage = lazy(() => import('@/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
+const ProfilePage = lazy(() => import('@/pages/ProfilePage').then((m) => ({ default: m.ProfilePage })));
 
-const RacesPage = lazy(() => import('@/pages/RacesPage.js').then((m) => ({ default: m.RacesPage })));
-const RaceDetailPage = lazy(() => import('@/pages/RaceDetailPage.js').then((m) => ({ default: m.RaceDetailPage })));
-const ClassesPage = lazy(() => import('@/pages/ClassesPage.js').then((m) => ({ default: m.ClassesPage })));
-const ClassDetailPage = lazy(() => import('@/pages/ClassDetailPage.js').then((m) => ({ default: m.ClassDetailPage })));
-const BackgroundsPage = lazy(() => import('@/pages/BackgroundsPage.js').then((m) => ({ default: m.BackgroundsPage })));
-const ConditionsPage = lazy(() => import('@/pages/ConditionsPage.js').then((m) => ({ default: m.ConditionsPage })));
-const EquipmentPage = lazy(() => import('@/pages/EquipmentPage.js').then((m) => ({ default: m.EquipmentPage })));
-const MagicItemsPage = lazy(() => import('@/pages/MagicItemsPage.js').then((m) => ({ default: m.MagicItemsPage })));
-const FeatsPage = lazy(() => import('@/pages/FeatsPage.js').then((m) => ({ default: m.FeatsPage })));
-const FeatDetailPage = lazy(() => import('@/pages/FeatDetailPage.js').then((m) => ({ default: m.FeatDetailPage })));
-const RulesPage = lazy(() => import('@/pages/RulesPage.js').then((m) => ({ default: m.RulesPage })));
+const RacesPage = lazy(() => import('@/pages/RacesPage').then((m) => ({ default: m.RacesPage })));
+const RaceDetailPage = lazy(() => import('@/pages/RaceDetailPage').then((m) => ({ default: m.RaceDetailPage })));
+const ClassesPage = lazy(() => import('@/pages/ClassesPage').then((m) => ({ default: m.ClassesPage })));
+const ClassDetailPage = lazy(() => import('@/pages/ClassDetailPage').then((m) => ({ default: m.ClassDetailPage })));
+const BackgroundsPage = lazy(() => import('@/pages/BackgroundsPage').then((m) => ({ default: m.BackgroundsPage })));
+const ConditionsPage = lazy(() => import('@/pages/ConditionsPage').then((m) => ({ default: m.ConditionsPage })));
+const EquipmentPage = lazy(() => import('@/pages/EquipmentPage').then((m) => ({ default: m.EquipmentPage })));
+const MagicItemsPage = lazy(() => import('@/pages/MagicItemsPage').then((m) => ({ default: m.MagicItemsPage })));
+const FeatsPage = lazy(() => import('@/pages/FeatsPage').then((m) => ({ default: m.FeatsPage })));
+const FeatDetailPage = lazy(() => import('@/pages/FeatDetailPage').then((m) => ({ default: m.FeatDetailPage })));
+const RulesPage = lazy(() => import('@/pages/RulesPage').then((m) => ({ default: m.RulesPage })));
 
-const InitiativeTrackerPage = lazy(() => import('@/pages/tools/InitiativeTrackerPage.js').then((m) => ({ default: m.InitiativeTrackerPage })));
-const SpellSlotsPage = lazy(() => import('@/pages/tools/SpellSlotsPage.js').then((m) => ({ default: m.SpellSlotsPage })));
-const CrBudgetPage = lazy(() => import('@/pages/tools/CrBudgetPage.js').then((m) => ({ default: m.CrBudgetPage })));
-const LootPage = lazy(() => import('@/pages/tools/LootPage.js').then((m) => ({ default: m.LootPage })));
-const NameGeneratorPage = lazy(() => import('@/pages/tools/NameGeneratorPage.js').then((m) => ({ default: m.NameGeneratorPage })));
+const InitiativeTrackerPage = lazy(() => import('@/pages/tools/InitiativeTrackerPage').then((m) => ({ default: m.InitiativeTrackerPage })));
+const SpellSlotsPage = lazy(() => import('@/pages/tools/SpellSlotsPage').then((m) => ({ default: m.SpellSlotsPage })));
+const CrBudgetPage = lazy(() => import('@/pages/tools/CrBudgetPage').then((m) => ({ default: m.CrBudgetPage })));
+const LootPage = lazy(() => import('@/pages/tools/LootPage').then((m) => ({ default: m.LootPage })));
+const NameGeneratorPage = lazy(() => import('@/pages/tools/NameGeneratorPage').then((m) => ({ default: m.NameGeneratorPage })));
 
-function PageLoader() {
+export function PageLoader() {
   return (
-    <div className="flex items-center justify-center min-h-[200px]">
+    <div className="flex items-center justify-center min-h-[200px] h-full">
       <div className="w-8 h-8 rounded-full border-2 animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
     </div>
   );
@@ -65,6 +67,7 @@ export default function App() {
 
           <Route element={<Layout />}>
             <Route path="/" element={<HomePage />} />
+            <Route path="/profile" element={user ? <ProfilePage /> : <Navigate to="/login" />} />
 
             <Route path="/spells" element={<SpellsPage />} />
             <Route path="/spells/:id" element={<SpellDetailPage />} />
@@ -76,8 +79,10 @@ export default function App() {
             <Route path="/classes/:id" element={<ClassDetailPage />} />
             <Route path="/backgrounds" element={<BackgroundsPage />} />
             <Route path="/conditions" element={<ConditionsPage />} />
+
             <Route path="/equipment" element={<EquipmentPage />} />
             <Route path="/magic-items" element={<MagicItemsPage />} />
+
             <Route path="/feats" element={<FeatsPage />} />
             <Route path="/feats/:id" element={<FeatDetailPage />} />
             <Route path="/rules" element={<RulesPage />} />
@@ -97,6 +102,8 @@ export default function App() {
             <Route path="/maps/:id" element={<MapDetailPage />} />
             <Route path="/homebrew" element={<HomebrewPage />} />
             <Route path="/homebrew/new" element={<HomebrewBuilderPage />} />
+            <Route path="/homebrew/:id" element={<HomebrewDetailPage />} />
+            <Route path="/homebrew/:id/edit" element={<HomebrewBuilderPage />} />
             <Route path="/ai" element={<AiPage />} />
 
             <Route path="/tools/initiative" element={<InitiativeTrackerPage />} />

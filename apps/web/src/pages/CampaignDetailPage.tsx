@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api.js';
+import { api } from '@/lib/api';
 import { ChevronLeft, Users, Map, Scroll, Plus, Trash2, Edit2, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useToastStore } from '@/store/toast.js';
+import { useToastStore } from '@/store/toast';
 
 interface NPC { id: string; name: string; role: string; description?: string }
 interface Session { id: string; title: string; session_number: number; date: string; summary: string }
@@ -22,15 +22,21 @@ export function CampaignDetailPage() {
   const qc = useQueryClient();
   const toast = useToastStore((s) => s.add);
   const [activeTab, setActiveTab] = useState<Tab>('Overview');
+
   const [addingNpc, setAddingNpc] = useState(false);
-  const [addingSession, setAddingSession] = useState(false);
   const [npcForm, setNpcForm] = useState({ name: '', role: '', description: '' });
+
+  const [addingSession, setAddingSession] = useState(false);
   const [sessionForm, setSessionForm] = useState({ title: '', summary: '', date: '' });
 
-  const { data, isLoading } = useQuery({
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [notesDraft, setNotesDraft] = useState('');
+
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['campaign', id],
     queryFn: () => api.get<Campaign>(`/campaigns/${id}`),
     enabled: !!id,
+    retry: 1,
   });
 
   const addNpcMut = useMutation({
@@ -45,7 +51,7 @@ export function CampaignDetailPage() {
   });
 
   const addSessionMut = useMutation({
-    mutationFn: (session: typeof sessionForm) => api.post(`/campaigns/${id}/sessions`, session),
+    mutationFn: (session: typeof sessionForm & { session_number: number }) => api.post(`/campaigns/${id}/sessions`, session),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['campaign', id] });
       setAddingSession(false);
@@ -60,12 +66,27 @@ export function CampaignDetailPage() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['campaign', id] }); toast({ type: 'info', message: 'NPC removed', duration: 2000 }); },
   });
 
+  const updateNotesMut = useMutation({
+    mutationFn: (notes: string) => api.patch(`/campaigns/${id}`, { dm_notes: notes }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['campaign', id] });
+      setEditingNotes(false);
+      toast({ type: 'success', message: 'Notes saved', duration: 2000 });
+    },
+    onError: () => toast({ type: 'error', message: 'Failed to save notes. Run DB migrations.', duration: 5000 }),
+  });
+
   if (isLoading) return <div className="text-center py-12" style={{ color: 'var(--text-muted)' }}>Loading...</div>;
-  if (!data) return <div className="text-center py-12" style={{ color: 'var(--dragon)' }}>Campaign not found.</div>;
+  if (isError || !data) return <div className="text-center py-12" style={{ color: 'var(--dragon)' }}>Campaign not found or failed to load.</div>;
 
   const npcs = data.npcs ?? [];
   const sessions = data.sessions ?? [];
   const reversedSessions = useMemo(() => [...sessions].reverse(), [sessions]);
+
+  const handleSaveSession = () => {
+    const nextSessionNumber = sessions.length > 0 ? Math.max(...sessions.map(s => s.session_number || 0)) + 1 : 1;
+    addSessionMut.mutate({ ...sessionForm, session_number: nextSessionNumber });
+  };
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -82,7 +103,7 @@ export function CampaignDetailPage() {
               <span className="badge-level capitalize">{data.status ?? 'active'}</span>
               {data.setting && <span className="badge-level">{data.setting}</span>}
               <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                {npcs.length}  NPCs &bull; {sessions.length} sessions
+                {npcs.length} NPCs &bull; {sessions.length} sessions
               </span>
             </div>
           </div>
@@ -192,7 +213,7 @@ export function CampaignDetailPage() {
                     </div>
                     <textarea className="input" rows={3} placeholder="Session summary..." value={sessionForm.summary} onChange={(e) => setSessionForm((p) => ({ ...p, summary: e.target.value }))} />
                     <div className="flex gap-2">
-                      <button onClick={() => addSessionMut.mutate(sessionForm)} disabled={!sessionForm.title || addSessionMut.isPending} className="btn-primary text-sm flex items-center gap-1"><Check className="w-4 h-4" /> Save</button>
+                      <button onClick={handleSaveSession} disabled={!sessionForm.title || addSessionMut.isPending} className="btn-primary text-sm flex items-center gap-1"><Check className="w-4 h-4" /> Save</button>
                       <button onClick={() => setAddingSession(false)} className="btn-secondary text-sm"><X className="w-4 h-4" /></button>
                     </div>
                   </motion.div>
@@ -220,11 +241,29 @@ export function CampaignDetailPage() {
           )}
 
           {activeTab === 'DM Notes' && (
-            <div className="card">
-              <h3 className="font-heading font-semibold mb-3">DM Notes</h3>
-              <p className="text-sm whitespace-pre-wrap leading-relaxed" style={{ color: data.dm_notes ? 'var(--text-secondary)' : 'var(--text-muted)' }}>
-                {data.dm_notes ?? 'No DM notes yet. Edit the campaign to add private notes.'}
-              </p>
+            <div className="card relative group">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="font-heading font-semibold">DM Notes</h3>
+                {!editingNotes && (
+                  <button onClick={() => { setNotesDraft(data.dm_notes ?? ''); setEditingNotes(true); }} className="btn-ghost text-sm p-1.5 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 items-center">
+                    <Edit2 className="w-3.5 h-3.5" /> Edit inline
+                  </button>
+                )}
+              </div>
+
+              {editingNotes ? (
+                <div className="space-y-3">
+                  <textarea autoFocus className="input w-full min-h-[150px]" value={notesDraft} onChange={(e) => setNotesDraft(e.target.value)} placeholder="Secret notes goes here..." />
+                  <div className="flex gap-2">
+                    <button onClick={() => updateNotesMut.mutate(notesDraft)} disabled={updateNotesMut.isPending} className="btn-primary text-sm flex items-center gap-1"><Check className="w-4 h-4" /> Save Note</button>
+                    <button onClick={() => setEditingNotes(false)} className="btn-secondary text-sm"><X className="w-4 h-4" /> Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <p onDoubleClick={() => { setNotesDraft(data.dm_notes ?? ''); setEditingNotes(true); }} className="text-sm whitespace-pre-wrap leading-relaxed cursor-text" style={{ color: data.dm_notes ? 'var(--text-secondary)' : 'var(--text-muted)' }}>
+                  {data.dm_notes ?? 'No DM notes yet. Double-click to edit.'}
+                </p>
+              )}
             </div>
           )}
         </motion.div>

@@ -1,10 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
-import { api } from '@/lib/api.js';
-import { useDiceStore } from '@/store/dice.js';
-import { cn } from '@/lib/utils.js';
+import { api } from '@/lib/api';
+import { useDiceStore } from '@/store/dice';
+import { cn } from '@/lib/utils';
 import { Dices, CheckSquare, Square } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as THREE from 'three';
+
+// Helper function to prevent the "Helicopter Unwind" spin.
+const alignRotation = (current: number, target: number) => {
+  const PI2 = Math.PI * 2;
+  const diff = ((target - current) % PI2 + PI2) % PI2;
+  return current + (diff > Math.PI ? diff - PI2 : diff);
+};
 
 function Real3DDice({ isRolling, dieType }: { isRolling: boolean, dieType: string }) {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -21,7 +28,7 @@ function Real3DDice({ isRolling, dieType }: { isRolling: boolean, dieType: strin
     sceneRef.current = scene;
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
     camera.position.z = 8;
-    
+
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setSize(400, 400);
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -31,34 +38,67 @@ function Real3DDice({ isRolling, dieType }: { isRolling: boolean, dieType: strin
     let targetRot = { x: 0, y: 0, z: 0 };
 
     if (dieType === 'd4') {
-      geometry = new THREE.TetrahedronGeometry(2.2);
-      targetRot = { x: 0.615, y: -0.785, z: 0 };
+      // Manually plotting the 3D vertices guarantees it spins on its true center of mass without wobbling to the edge!
+      const R = 2.8;
+      const rb = R * (Math.sqrt(8) / 3);
+      const x_val = rb * (Math.sqrt(3) / 2);
+      const z_front = rb / 2;
+      const z_back = -rb;
+      const y_top = R;
+      const y_base = -R / 3;
+
+      const vertices = new Float32Array([
+        // Front Face
+        0, y_top, 0, -x_val, y_base, z_front, x_val, y_base, z_front,
+        // Right Face
+        0, y_top, 0, x_val, y_base, z_front, 0, y_base, z_back,
+        // Left Face
+        0, y_top, 0, 0, y_base, z_back, -x_val, y_base, z_front,
+        // Base
+        0, y_base, z_back, x_val, y_base, z_front, -x_val, y_base, z_front
+      ]);
+
+      geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+      geometry.computeVertexNormals();
+
+      // Translating by exactly -R/9 aligns the center of the front face to the HTML number overlay
+      geometry.translate(0, -R / 9, 0);
+      // 0.34 radians is exactly 19.47 degrees, which pitches the sloped face perfectly flat to the camera
+      targetRot = { x: 0.34, y: 0, z: 0 };
+
     } else if (dieType === 'd6') {
-      geometry = new THREE.BoxGeometry(2.8, 2.8, 2.8);
-      targetRot = { x: 0, y: 0, z: 0 };
+      geometry = new THREE.BoxGeometry(2.6, 2.6, 2.6);
+      targetRot = { x: 0, y: 0, z: 0 }; // Dead flat parallel to screen
     } else if (dieType === 'd8') {
       geometry = new THREE.OctahedronGeometry(2.4);
-      targetRot = { x: -0.615, y: -0.785, z: 0 };
+      targetRot = { x: 0.615, y: 0.785, z: 0 };
     } else if (dieType === 'd10' || dieType === 'd100') {
-      geometry = new THREE.OctahedronGeometry(2.4); // fallback D10 to Octahedron for now
-      targetRot = { x: -0.615, y: -0.785, z: 0 };
+      geometry = new THREE.OctahedronGeometry(2.4);
+      targetRot = { x: 0.615, y: 0.785, z: 0 };
     } else if (dieType === 'd12') {
       geometry = new THREE.DodecahedronGeometry(2.2);
-      targetRot = { x: 0, y: 0, z: 0 };
+      targetRot = { x: 1.017, y: 0, z: 0 }; // Exact half-dihedral angle to face the pentagon directly
     } else {
       geometry = new THREE.IcosahedronGeometry(2.4, 0); // d20
-      targetRot = { x: -0.5535, y: 0, z: 0 };
+      geometry.rotateY(-0.36486); // Rotates the Icosahedron to point a face directly at the Z axis
+      geometry.rotateZ(Math.PI / 2); // Rotates the face so the triangle points UP instead of SIDEWAYS
+      targetRot = { x: 0, y: 0, z: 0 };
     }
 
-    const material = new THREE.MeshStandardMaterial({ 
-      color: 0x8b5cf6, roughness: 0.15, metalness: 0.7 
+    if (dieType !== 'd4') {
+      geometry.center(); // Center built-in geometries
+    }
+
+    const material = new THREE.MeshStandardMaterial({
+      color: 0x8b5cf6, roughness: 0.15, metalness: 0.7, flatShading: true
     });
     const mesh = new THREE.Mesh(geometry, material);
-    
+
     const edges = new THREE.EdgesGeometry(geometry);
     const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xd8b4fe, linewidth: 2 }));
     mesh.add(line);
-    
+
     const group = new THREE.Group();
     group.add(mesh);
     scene.add(group);
@@ -78,10 +118,19 @@ function Real3DDice({ isRolling, dieType }: { isRolling: boolean, dieType: strin
         mesh.rotation.z += 0.10;
         group.position.y = Math.sin(Date.now() * 0.01) * 0.3;
       } else {
-        mesh.rotation.x = THREE.MathUtils.lerp(mesh.rotation.x, targetRot.x, 0.1);
-        mesh.rotation.y = THREE.MathUtils.lerp(mesh.rotation.y, targetRot.y, 0.1);
-        mesh.rotation.z = THREE.MathUtils.lerp(mesh.rotation.z, targetRot.z, 0.1);
+        const tx = alignRotation(mesh.rotation.x, targetRot.x);
+        const ty = alignRotation(mesh.rotation.y, targetRot.y);
+        const tz = alignRotation(mesh.rotation.z, targetRot.z);
+
+        mesh.rotation.x = THREE.MathUtils.lerp(mesh.rotation.x, tx, 0.1);
+        mesh.rotation.y = THREE.MathUtils.lerp(mesh.rotation.y, ty, 0.1);
+        mesh.rotation.z = THREE.MathUtils.lerp(mesh.rotation.z, tz, 0.1);
         group.position.y = THREE.MathUtils.lerp(group.position.y, 0, 0.05);
+
+        if (Math.abs(mesh.rotation.x - tx) < 0.01) mesh.rotation.x = tx;
+        if (Math.abs(mesh.rotation.y - ty) < 0.01) mesh.rotation.y = ty;
+        if (Math.abs(mesh.rotation.z - tz) < 0.01) mesh.rotation.z = tz;
+        if (Math.abs(group.position.y) < 0.01) group.position.y = 0;
       }
       renderer.render(scene, camera);
     };
@@ -121,20 +170,28 @@ export function DiceRoller({ campaignId, compact = false }: DiceRollerProps) {
   const [expression, setExpression] = useState('1d20');
   const [label, setLabel] = useState('');
   const [lastResult, setLastResult] = useState<RollResult | null>(null);
-  
+
   const [isRolling, setIsRolling] = useState(false);
   const [enableAnimation, setEnableAnimation] = useState(true);
   const [fakeValue, setFakeValue] = useState(20);
-  
+
   const addRoll = useDiceStore((s) => s.addRoll);
   const history = useDiceStore((s) => s.history);
+
+  const match = expression.match(/d(\d+)/i);
+  const currentDieType = match ? `d${match[1]}`.toLowerCase() : 'd20';
+
+  const maxValRef = useRef(20);
+  useEffect(() => {
+    maxValRef.current = parseInt(currentDieType.replace(/\D/g, ''), 10) || 20;
+  }, [currentDieType]);
 
   useEffect(() => {
     let interval: number;
     if (isRolling && enableAnimation) {
       interval = window.setInterval(() => {
-        setFakeValue(Math.floor(Math.random() * 20) + 1);
-      }, 80);
+        setFakeValue(Math.floor(Math.random() * maxValRef.current) + 1);
+      }, 50);
     }
     return () => clearInterval(interval);
   }, [isRolling, enableAnimation]);
@@ -143,7 +200,7 @@ export function DiceRoller({ campaignId, compact = false }: DiceRollerProps) {
     const rollExpr = expr ?? expression;
     setIsRolling(true);
     setLastResult(null);
-    
+
     try {
       const result = await api.post<RollResult>('/dice/roll', {
         expression: rollExpr,
@@ -152,7 +209,7 @@ export function DiceRoller({ campaignId, compact = false }: DiceRollerProps) {
       });
 
       if (enableAnimation) {
-        await new Promise(r => setTimeout(r, 1200));
+        await new Promise(r => setTimeout(r, 700));
       }
 
       setLastResult(result);
@@ -170,14 +227,9 @@ export function DiceRoller({ campaignId, compact = false }: DiceRollerProps) {
     rollDice(expr);
   }
 
-  const match = expression.match(/d(\d+)/i);
-  const currentDieType = match ? `d${match[1]}`.toLowerCase() : 'd20';
-
   return (
     <div className="space-y-6">
-
       <div className="flex flex-col gap-4">
-
         <div className="flex flex-wrap gap-2">
           {QUICK_DICE.map((die) => (
             <button
@@ -185,8 +237,8 @@ export function DiceRoller({ campaignId, compact = false }: DiceRollerProps) {
               onClick={() => handleQuickRoll(die)}
               className={cn(
                 'font-ui font-semibold shadow-sm transition-all duration-200 active:scale-95',
-                die === 'd20' 
-                  ? 'bg-[var(--accent)] text-white hover:brightness-110 border border-transparent' 
+                die === 'd20'
+                  ? 'bg-[var(--accent)] text-white hover:brightness-110 border border-transparent'
                   : 'bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--accent)]',
                 compact ? 'text-xs px-2.5 py-1.5 rounded-lg' : 'text-sm px-4 py-2 rounded-xl',
               )}
@@ -195,7 +247,6 @@ export function DiceRoller({ campaignId, compact = false }: DiceRollerProps) {
             </button>
           ))}
         </div>
-
 
         <div className="flex flex-wrap sm:flex-nowrap gap-2 items-center">
           <input
@@ -228,8 +279,7 @@ export function DiceRoller({ campaignId, compact = false }: DiceRollerProps) {
           </button>
         </div>
 
-
-        <button 
+        <button
           onClick={() => setEnableAnimation(!enableAnimation)}
           className="flex items-center gap-2 text-xs font-ui text-[var(--text-muted)] hover:text-[var(--text-primary)] w-fit transition-colors"
         >
@@ -238,97 +288,80 @@ export function DiceRoller({ campaignId, compact = false }: DiceRollerProps) {
         </button>
       </div>
 
-
-      <div className="relative min-h-[300px] flex items-center justify-center p-6 rounded-2xl border shadow-inner overflow-hidden" style={{ background: 'var(--bg)', borderColor: 'var(--border-strong)' }}>
-        
+      <div className="relative min-h-[350px] w-full rounded-2xl border shadow-inner overflow-hidden" style={{ background: 'var(--bg)', borderColor: 'var(--border-strong)' }}>
 
         {enableAnimation && (
           <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden flex items-center justify-center">
-             {(isRolling || lastResult) && <Real3DDice isRolling={isRolling} dieType={currentDieType} />}
+            {(isRolling || lastResult) && <Real3DDice isRolling={isRolling} dieType={currentDieType} />}
           </div>
         )}
 
-        <div className="relative z-10 w-full flex flex-col items-center justify-center pointer-events-none">
-          <AnimatePresence mode="wait">
-
-            {isRolling && enableAnimation && (
-              <motion.div
-                key="rolling"
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8, filter: 'blur(10px)' }}
-                className="flex items-center justify-center"
-              >
-
-                <motion.span 
-                  className="font-rubik font-black text-6xl lg:text-7xl text-white drop-shadow-2xl"
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ duration: 0.08, repeat: Infinity }}
-                >
-                  {fakeValue}
-                </motion.span>
+        <AnimatePresence>
+          {!isRolling && lastResult && (
+            <>
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="absolute top-6 left-0 right-0 flex flex-col items-center pointer-events-auto z-20">
+                {lastResult.label && <span className="text-xs font-montserrat uppercase tracking-widest font-bold" style={{ color: 'var(--accent)' }}>{lastResult.label}</span>}
+                <div className="font-mono text-sm" style={{ color: 'var(--text-muted)' }}>{lastResult.expression}</div>
               </motion.div>
-            )}
 
-
-            {!isRolling && lastResult && (
-              <motion.div
-                key="result"
-                initial={enableAnimation ? { opacity: 0, y: 50, scale: 1.5, rotate: -15 } : { opacity: 0 }}
-                animate={enableAnimation ? { opacity: 1, y: 0, scale: 1, rotate: 0 } : { opacity: 1 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                className="text-center"
-              >
-                <div className="mb-6 pointer-events-auto">
-                  {lastResult.label && <span className="text-xs font-montserrat uppercase tracking-widest font-bold drop-shadow-md" style={{ color: 'var(--accent)' }}>{lastResult.label}</span>}
-                  <div className="font-mono text-sm drop-shadow-md" style={{ color: 'var(--text-muted)' }}>{lastResult.expression}</div>
-                </div>
-                
-                <motion.div 
-                  className="inline-block relative"
-                  animate={enableAnimation ? { 
-                    filter: ['drop-shadow(0 0 0px var(--accent))', 'drop-shadow(0 0 40px var(--accent))', 'drop-shadow(0 0 10px var(--accent-muted))'],
-                  } : {}}
-                  transition={{ duration: 1 }}
-                >
-                  <span className="font-rubik font-black text-7xl lg:text-8xl" style={{ 
-                    color: 'white',
-                    WebkitTextStroke: '2px var(--accent)'
-                  }}>
-                    {lastResult.total}
-                  </span>
-                </motion.div>
-
-                <div className="mt-8 font-mono text-sm max-w-[280px] mx-auto break-words bg-[var(--surface-overlay)] backdrop-blur-md p-3 rounded-lg border border-[var(--border-subtle)] pointer-events-auto" style={{ color: 'var(--text-secondary)' }}>
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="absolute bottom-6 left-4 right-4 flex justify-center pointer-events-auto z-20">
+                <div className="font-mono text-sm max-w-[280px] break-words bg-[var(--surface-overlay)] backdrop-blur-md p-3 rounded-lg border border-[var(--border-subtle)] text-center shadow-lg" style={{ color: 'var(--text-secondary)' }}>
                   {lastResult.breakdown}
                 </div>
               </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+          <AnimatePresence mode="wait">
+            {isRolling && enableAnimation && (
+              <motion.span
+                key="rolling"
+                className="font-rubik font-black text-6xl lg:text-7xl text-white drop-shadow-md leading-none"
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 0.08, repeat: Infinity }}
+              >
+                {fakeValue}
+              </motion.span>
+            )}
+
+            {!isRolling && lastResult && (
+              <motion.span
+                key="result"
+                initial={enableAnimation ? { opacity: 0, scale: 1.5, rotate: -15 } : { opacity: 0 }}
+                animate={enableAnimation ? { opacity: 1, scale: 1, rotate: 0 } : { opacity: 1 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className="font-rubik font-black text-7xl lg:text-8xl text-white pointer-events-auto leading-none"
+                style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5)) drop-shadow(0 0 10px var(--accent))' }}
+              >
+                {lastResult.total}
+              </motion.span>
             )}
 
             {!isRolling && !lastResult && (
-               <motion.div 
-                 key="empty" 
-                 initial={{ opacity: 0 }} 
-                 animate={{ opacity: 1 }} 
-                 className="font-ui text-[var(--text-muted)] italic"
-               >
-                 Cast your dice...
-               </motion.div>
+              <motion.span
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="font-ui text-[var(--text-muted)] italic leading-none"
+              >
+                Cast your dice...
+              </motion.span>
             )}
           </AnimatePresence>
         </div>
       </div>
-
 
       {!compact && history.length > 0 && (
         <div className="space-y-2 mt-8 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
           <h4 className="font-montserrat text-[0.65rem] font-bold uppercase tracking-[0.2em]" style={{ color: 'var(--accent)' }}>Recent Rolls</h4>
           <div className="grid gap-2 max-h-48 overflow-y-auto scrollbar-thin pr-2">
             {history.map((roll) => (
-              <div key={roll.id} className="flex justify-between items-center bg-[var(--surface)] p-3 rounded-xl border border-[var(--border-subtle)]">
+              <div key={roll.id} className="flex justify-between items-center bg-[var(--surface)] p-3 rounded-xl border border-[var(--border-subtle)] hover:border-[var(--border)] transition-colors">
                 <div className="flex flex-col">
                   {roll.label && <span className="text-[0.65rem] font-montserrat uppercase font-bold text-[var(--text-secondary)]">{roll.label}</span>}
-                  <span className="font-mono text-xs text-[var(--text-muted)]">{roll.expression} {roll.modifier !== 0 && `(Mod: ${roll.modifier > 0 ? '+'+roll.modifier : roll.modifier})`}</span>
+                  <span className="font-mono text-xs text-[var(--text-muted)]">{roll.expression} {roll.modifier !== 0 && `(Mod: ${roll.modifier > 0 ? '+' + roll.modifier : roll.modifier})`}</span>
                 </div>
                 <div className="font-rubik font-bold text-xl text-[var(--text-primary)] pl-4 border-l border-[var(--border)]">{roll.total}</div>
               </div>
@@ -339,4 +372,3 @@ export function DiceRoller({ campaignId, compact = false }: DiceRollerProps) {
     </div>
   );
 }
-

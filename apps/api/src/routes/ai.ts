@@ -61,6 +61,19 @@ function checkRateLimit(userId: string) {
   if (!check.allowed) throw new ApiError(429, check.reason ?? 'Rate limit exceeded');
 }
 
+// Safety wrapper to catch upstream provider errors (like Gemini 429 Quota Exceeded)
+async function safeAiCall<T>(call: () => Promise<T>): Promise<T> {
+  try {
+    return await call();
+  } catch (err: any) {
+    const msg = err?.message?.toLowerCase() || '';
+    if (msg.includes('429') || msg.includes('quota') || msg.includes('rate limit')) {
+      throw new ApiError(429, 'AI Provider rate limit exceeded. Please wait a moment before trying again.');
+    }
+    throw new ApiError(503, `AI Provider Error: ${err?.message || 'Unknown error'}`);
+  }
+}
+
 const ChatHistorySchema = z.object({
   messages: z.array(z.object({
     role: z.enum(['user', 'assistant']),
@@ -75,24 +88,29 @@ router.post('/rules', requireAuth, async (req, res, next) => {
 
     const { question } = z.object({ question: z.string().min(1).max(1000) }).parse(req.body);
     let result = { answer: '', sources: [] as any[] };
-    
+
     try {
       const vectorStore = new PgVectorStore(config.databaseUrl);
       const rag = new RulesRag(provider, vectorStore);
       result = await rag.query(question);
     } catch (dbError) {
       console.warn('Vector store unavailable, falling back to base model', dbError);
+
       const fallbackPrompt = `You are a D&D 5e Rules Expert. Answer this strictly by the rules: ${question}`;
-      const res = await provider.chat([{ role: 'user', content: fallbackPrompt }]);
-      result.answer = res.content;
+      const resModel = await safeAiCall(() => provider.chat([{ role: 'user', content: fallbackPrompt }]));
+      result.answer = resModel.content;
       result.sources = [];
     }
 
     rateLimiter.record(req.user!.id);
-
     res.json({ answer: result.answer, model: 'rag-engine', sources: result.sources });
+
   } catch (err) {
-    next(err);
+    if (err instanceof z.ZodError) {
+      next(new ApiError(400, 'Invalid request payload format.'));
+    } else {
+      next(err);
+    }
   }
 });
 
@@ -125,7 +143,7 @@ router.post('/npc/dialogue', requireAuth, async (req, res, next) => {
       content: m.content,
     }));
 
-    const response = await bot.generateDialogue(body.persona as any, body.message, history);
+    const response = await safeAiCall(() => bot.generateDialogue(body.persona as any, body.message, history));
     rateLimiter.record(req.user!.id, response.usage?.total_tokens);
 
     res.json({ reply: response.content, model: response.model });
@@ -149,7 +167,7 @@ router.post('/npc/impression', requireAuth, async (req, res, next) => {
     }).parse(req.body);
 
     const bot = new NpcBot(provider);
-    const impression = await bot.generateFirstImpression(persona as any);
+    const impression = await safeAiCall(() => bot.generateFirstImpression(persona as any));
     rateLimiter.record(req.user!.id);
 
     res.json({ impression });
@@ -182,7 +200,7 @@ router.post('/story/hook', requireAuth, async (req, res, next) => {
     }).parse(req.body);
 
     const bot = new StoryBot(provider);
-    const hook = await bot.generateSessionHook(context as any);
+    const hook = await safeAiCall(() => bot.generateSessionHook(context as any));
     rateLimiter.record(req.user!.id);
 
     res.json({ hook });
@@ -203,7 +221,7 @@ router.post('/story/location', requireAuth, async (req, res, next) => {
     }).parse(req.body);
 
     const bot = new StoryBot(provider);
-    const description = await bot.generateLocationDescription(locationName, locationType, context);
+    const description = await safeAiCall(() => bot.generateLocationDescription(locationName, locationType, context));
     rateLimiter.record(req.user!.id);
 
     res.json({ description });
@@ -230,7 +248,7 @@ router.post('/dm/encounter', requireAuth, async (req, res, next) => {
     }).parse(req.body);
 
     const dm = new DmAssistant(provider);
-    const suggestion = await dm.suggestEncounter(context as any);
+    const suggestion = await safeAiCall(() => dm.suggestEncounter(context as any));
     rateLimiter.record(req.user!.id);
 
     res.json({ suggestion });
@@ -251,7 +269,7 @@ router.post('/dm/treasure', requireAuth, async (req, res, next) => {
     }).parse(req.body);
 
     const dm = new DmAssistant(provider);
-    const treasure = await dm.generateTreasure(partyLevel, encounterType, monsterCR);
+    const treasure = await safeAiCall(() => dm.generateTreasure(partyLevel, encounterType, monsterCR));
     rateLimiter.record(req.user!.id);
 
     res.json({ treasure });
@@ -271,10 +289,10 @@ router.post('/dm/chat', requireAuth, async (req, res, next) => {
     }).parse(req.body);
 
     const dm = new DmAssistant(provider);
-    const response = await dm.chat(
+    const response = await safeAiCall(() => dm.chat(
       history.map((m) => ({ role: m.role, content: m.content })),
       message,
-    );
+    ));
     rateLimiter.record(req.user!.id, response.usage?.total_tokens);
 
     res.json({ reply: response.content, model: response.model });

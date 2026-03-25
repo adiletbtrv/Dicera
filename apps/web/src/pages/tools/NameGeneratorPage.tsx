@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { RefreshCw, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 const NAMES: Record<string, { prefixes: string[]; suffixes: string[] }> = {
   Human: { prefixes: ['Al', 'Bar', 'Cal', 'Dal', 'Ed', 'Fer', 'Gar', 'Hal', 'Iv', 'Jan', 'Kor', 'Lor', 'Mar', 'Nor', 'Ol', 'Per', 'Ran', 'Sar', 'Tav', 'Ul', 'Val', 'Wil', 'Xan', 'Yor', 'Zar'], suffixes: ['an', 'en', 'er', 'ard', 'ish', 'or', 'us', 'ian', 'ius', 'en', 'ic', 'ek', 'ok', 'iel', 'ael'] },
@@ -22,9 +23,11 @@ export function NameGeneratorPage() {
   const [race, setRace] = useState('Human');
   const [count, setCount] = useState(5);
   const [names, setNames] = useState<string[]>([]);
+  const [genId, setGenId] = useState(0);
 
   function roll() {
     setNames(Array.from({ length: count }, () => generate(race)));
+    setGenId(id => id + 1); // Only triggers animation once per roll, instead of per-name-change
   }
 
   return (
@@ -33,13 +36,15 @@ export function NameGeneratorPage() {
         <User className="w-7 h-7" style={{ color: 'var(--accent)' }} />
         <h1 className="font-heading text-3xl font-bold">Name Generator</h1>
       </div>
-      <div className="card mb-6 space-y-4">
+      <div className="card mb-6 space-y-4 hover:border-[var(--border)] hover:translate-y-0">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="label">Race</label>
-            <select className="input" value={race} onChange={(e) => setRace(e.target.value)}>
-              {Object.keys(NAMES).map((r) => <option key={r} value={r}>{r}</option>)}
-            </select>
+            <CustomSelect
+              value={race}
+              onChange={setRace}
+              options={Object.keys(NAMES).map(r => ({ value: r, label: r }))}
+            />
           </div>
           <div>
             <label className="label">Count</label>
@@ -56,7 +61,7 @@ export function NameGeneratorPage() {
       </div>
       <AnimatePresence mode="wait">
         {names.length > 0 && (
-          <motion.div key={names.join()} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="card">
+          <motion.div key={genId} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="card hover:border-[var(--border)] hover:translate-y-0">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {names.map((name, i) => (
                 <div key={i} className="px-4 py-3 rounded-xl text-center font-heading font-semibold" style={{ background: 'var(--surface-raised)', color: 'var(--text-primary)' }}>

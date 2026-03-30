@@ -2,34 +2,38 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Use Node.js 22.x
-      uses: actions/setup-node@v4
-      with:
-        node-version: 22.x
-        cache: 'npm'
-        
-    - name: Install Dependencies
-      run: npm ci
-      
-    - name: Typecheck
-      run: npm run typecheck
-      
-    - name: API Tests
-      run: npm run test -w apps/api
-      
-    - name: Frontend Tests
-      run: npm run test -w apps/web
-      
-    - name: Build
-      run: npm run build
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      # ENTERPRISE FIX: Build dependencies FIRST so their .d.ts files exist!
+      - name: Build Internal Packages
+        run: npm run build -w packages/data -w packages/ai
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: API Tests
+        run: npm run test -w apps/api
+
+      - name: Frontend Tests
+        run: npm run test -w apps/web
+
+      - name: Build App
+        run: npm run build

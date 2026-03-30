@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { ChevronLeft, ZoomIn, ZoomOut, RotateCcw, Download, MapPin, Trash2, Edit2, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { CustomSelect } from '@/components/ui/CustomSelect.js';
 
 interface MapData { id: string; name: string; description?: string; image_url?: string; tags?: string[]; width?: number; height?: number; }
 type Pin = { id: string; x: number; y: number; label: string; color: string; size: number };
@@ -132,9 +133,13 @@ export function MapDetailPage() {
           {pinMode && (
             <div className="flex items-center gap-2">
               <input className="input px-2 py-1 text-sm w-32" placeholder="Pin label..." value={pinForm.label} onChange={(e) => setPinForm({ ...pinForm, label: e.target.value })} autoFocus />
-              <select className="input px-2 py-1 text-sm w-20" value={pinForm.size} onChange={(e) => setPinForm({ ...pinForm, size: Number(e.target.value) })}>
-                {PIN_SIZES.map(s => <option key={s} value={s}>{s}px</option>)}
-              </select>
+              <div className="w-24">
+                <CustomSelect
+                  value={String(pinForm.size)}
+                  onChange={(val) => setPinForm({ ...pinForm, size: Number(val) })}
+                  options={PIN_SIZES.map(s => ({ value: String(s), label: `${s}px` }))}
+                />
+              </div>
             </div>
           )}
         </div>
@@ -210,9 +215,11 @@ export function MapDetailPage() {
                 </div>
                 <div>
                   <label className="label text-sm">Size</label>
-                  <select className="input px-2 py-2 text-sm" value={editingPin.size} onChange={(e) => setEditingPin({ ...editingPin, size: Number(e.target.value) })}>
-                    {PIN_SIZES.map(s => <option key={s} value={s}>{s}px</option>)}
-                  </select>
+                  <CustomSelect
+                    value={String(editingPin.size)}
+                    onChange={(val) => setEditingPin({ ...editingPin, size: Number(val) })}
+                    options={PIN_SIZES.map(s => ({ value: String(s), label: `${s}px` }))}
+                  />
                 </div>
               </div>
               <div className="flex justify-between pt-4 mt-2 border-t border-white/10">

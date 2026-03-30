@@ -1,4 +1,4 @@
-import { useState, useCallback, useDeferredValue } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api.js';
@@ -22,6 +22,7 @@ const INITIAL_FILTERS: Filters = { q: '', level: '', school: '', class: '', conc
 export function SpellsPage() {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<Filters>(INITIAL_FILTERS);
+  const [searchInput, setSearchInput] = useState(filters.q);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['spells', filters],
@@ -36,9 +37,20 @@ export function SpellsPage() {
 
   const updateFilter = useCallback(
     (key: keyof Filters, value: string | number) => {
-      setFilters((prev) => ({ ...prev, [key]: value, page: key === 'page' ? (value as number) : 1 }));
+      setFilters((prev) => {
+        if (prev[key] === value) return prev;
+        return { ...prev, [key]: value, page: key === 'page' ? (value as number) : 1 };
+      });
     }, [],
   );
+
+  // Debounce search input to prevent massive re-renders on every keystroke
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      updateFilter('q', searchInput);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [searchInput, updateFilter]);
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -55,8 +67,8 @@ export function SpellsPage() {
       <div className="card mb-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="md:col-span-2">
-            <input type="search" placeholder="Search spells..." value={filters.q}
-              onChange={(e) => updateFilter('q', e.target.value)} className="input" />
+            <input type="search" placeholder="Search spells..." value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)} className="input" />
           </div>
           <CustomSelect
             value={filters.level}

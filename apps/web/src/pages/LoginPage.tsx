@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.js';
-import { Swords } from 'lucide-react';
+import { Logo } from '@/components/ui/Logo.js';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -24,17 +24,14 @@ export function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--bg)' }}>
       <div className="w-full max-w-sm">
-        <div className="text-center mb-10 flex flex-col items-center">
-          <div
-            className="p-4 rounded-full mb-6 flex items-center justify-center"
-            style={{ background: 'var(--accent-muted)', border: '1px solid var(--border)' }}
-          >
-            <Swords className="w-10 h-10" style={{ color: 'var(--accent)' }} />
+        <div className="text-center flex flex-col items-center">
+          <div className="w-20 h-20 mb-6 drop-shadow-2xl">
+            <Logo className="w-full h-full" />
           </div>
-          <h1 className="font-heading text-2xl font-bold text-center mb-6" style={{ color: 'var(--text-primary)' }}>
-            Dicera
+          <h1 className="font-heading text-3xl font-extrabold tracking-tight text-center mb-1" style={{ color: 'var(--text-primary)' }}>
+            Welcome Back
           </h1>
-          <p className="mt-2 font-body" style={{ color: 'var(--text-secondary)' }}>Sign in to your account</p>
+          <p className="mt-2 font-body mb-8 text-sm" style={{ color: 'var(--text-secondary)' }}>Sign in to your Dicera account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="card space-y-4">

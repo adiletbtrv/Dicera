@@ -1,4 +1,4 @@
-import { abilityModifier, formatModifier, cn } from '@/lib/utils.js';
+import { abilityModifier, formatModifier, cn } from '@/lib/utils';
 import type { Monster } from '@dnd/data';
 
 interface StatBlockProps {
@@ -17,7 +17,7 @@ const ABILITY_LABELS = [
 
 export function StatBlock({ monster, className }: StatBlockProps) {
   return (
-    <div 
+    <div
       className={cn('stat-block font-body text-sm rounded-xl p-6 shadow-xl', className)}
       style={{
         background: 'var(--surface-raised)',
@@ -56,13 +56,13 @@ export function StatBlock({ monster, className }: StatBlockProps) {
         </p>
         <p>
           <span className="font-bold" style={{ color: 'var(--text-primary)' }}>Proficiency Bonus</span>{' '}
-          {formatModifier(monster.proficiency_bonus)}
+          {formatModifier(monster.proficiency_bonus as number)}
         </p>
       </div>
 
       <div className="grid grid-cols-6 gap-2 text-center border-b pb-3 mb-4" style={{ borderColor: 'var(--border-strong)' }}>
         {ABILITY_LABELS.map(({ key, label }) => {
-          const score = monster.ability_scores[key];
+          const score = monster.ability_scores[key] as number;
           const mod = abilityModifier(score);
           return (
             <div key={key} className="flex flex-col items-center p-2 rounded-lg" style={{ background: 'var(--surface)' }}>
@@ -82,7 +82,7 @@ export function StatBlock({ monster, className }: StatBlockProps) {
         <p className="mb-1">
           <span className="font-bold" style={{ color: 'var(--text-primary)' }}>Saving Throws</span>{' '}
           {Object.entries(monster.saving_throws ?? {})
-            .map(([k, v]) => `${k.toUpperCase()} ${formatModifier(v)}`)
+            .map(([k, v]) => `${k.toUpperCase()} ${formatModifier(v as number)}`)
             .join(', ')}
         </p>
       )}
@@ -91,7 +91,7 @@ export function StatBlock({ monster, className }: StatBlockProps) {
         <p className="mb-1">
           <span className="font-bold" style={{ color: 'var(--text-primary)' }}>Skills</span>{' '}
           {Object.entries(monster.skills ?? {})
-            .map(([k, v]) => `${k} ${formatModifier(v)}`)
+            .map(([k, v]) => `${k} ${formatModifier(v as number)}`)
             .join(', ')}
         </p>
       )}
@@ -137,7 +137,7 @@ export function StatBlock({ monster, className }: StatBlockProps) {
 
       {(monster.special_abilities?.length ?? 0) > 0 && (
         <div className="mb-4">
-          {monster.special_abilities!.map((ability, i) => (
+          {monster.special_abilities!.map((ability: any, i: number) => (
             <p key={i} className="mb-2 leading-relaxed">
               <span className="font-bold italic" style={{ color: 'var(--text-primary)' }}>{ability.name}.</span> {ability.desc}
             </p>
@@ -148,7 +148,7 @@ export function StatBlock({ monster, className }: StatBlockProps) {
       {(monster.actions?.length ?? 0) > 0 && (
         <div className="mb-4 pt-4 border-t" style={{ borderColor: 'var(--border-strong)' }}>
           <h3 className="font-heading font-bold text-xl mb-3" style={{ color: 'var(--accent)' }}>Actions</h3>
-          {monster.actions!.map((action, i) => (
+          {monster.actions!.map((action: any, i: number) => (
             <p key={i} className="mb-2 leading-relaxed">
               <span className="font-bold italic" style={{ color: 'var(--text-primary)' }}>{action.name}.</span> {action.desc}
             </p>
@@ -159,7 +159,7 @@ export function StatBlock({ monster, className }: StatBlockProps) {
       {(monster.bonus_actions?.length ?? 0) > 0 && (
         <div className="mb-4 pt-4 border-t border-dashed" style={{ borderColor: 'var(--border-strong)' }}>
           <h3 className="font-heading font-bold text-lg mb-2" style={{ color: 'var(--teal2)' }}>Bonus Actions</h3>
-          {monster.bonus_actions!.map((action, i) => (
+          {monster.bonus_actions!.map((action: any, i: number) => (
             <p key={i} className="mb-2 leading-relaxed">
               <span className="font-bold italic" style={{ color: 'var(--text-primary)' }}>{action.name}.</span> {action.desc}
             </p>
@@ -170,7 +170,7 @@ export function StatBlock({ monster, className }: StatBlockProps) {
       {(monster.reactions?.length ?? 0) > 0 && (
         <div className="mb-4 pt-4 border-t border-dashed" style={{ borderColor: 'var(--border-strong)' }}>
           <h3 className="font-heading font-bold text-lg mb-2" style={{ color: 'var(--teal2)' }}>Reactions</h3>
-          {monster.reactions!.map((action, i) => (
+          {monster.reactions!.map((action: any, i: number) => (
             <p key={i} className="mb-2 leading-relaxed">
               <span className="font-bold italic" style={{ color: 'var(--text-primary)' }}>{action.name}.</span> {action.desc}
             </p>
@@ -181,7 +181,7 @@ export function StatBlock({ monster, className }: StatBlockProps) {
       {(monster.legendary_actions?.length ?? 0) > 0 && (
         <div className="pt-4 border-t" style={{ borderColor: 'var(--border-strong)' }}>
           <h3 className="font-heading font-bold text-xl mb-3" style={{ color: 'var(--accent)' }}>Legendary Actions</h3>
-          {monster.legendary_actions!.map((action, i) => (
+          {monster.legendary_actions!.map((action: any, i: number) => (
             <p key={i} className="mb-2 leading-relaxed">
               <span className="font-bold italic" style={{ color: 'var(--text-primary)' }}>{action.name}.</span> {action.desc}
             </p>

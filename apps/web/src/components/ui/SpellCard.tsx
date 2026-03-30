@@ -82,8 +82,8 @@ export function SpellCard({ spell, compact = false, className, onClick }: SpellC
 
           {spell.classes.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1">
-              {spell.classes.map((cls) => (
-                <span key={cls} className="badge capitalize" style={{ background: 'var(--surface-raised)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+              {spell.classes.map((cls: any, i: number) => (
+                <span key={i} className="badge capitalize" style={{ background: 'var(--surface-raised)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
                   {cls}
                 </span>
               ))}

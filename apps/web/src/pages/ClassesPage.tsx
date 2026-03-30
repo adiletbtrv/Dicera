@@ -6,7 +6,7 @@ import { GraduationCap, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { EmptyState } from '@/components/EmptyState.js';
 
-interface DndClass { id: string; name: string; hit_die: string; primary_ability: string[]; source: string }
+interface DndClass { id: string; name: string; hit_die: string; description?: string; primary_ability: string[]; source: string }
 
 const HIT_DIE_COLORS: Record<string, string> = {
   d6: 'var(--teal)', d8: 'var(--accent)', d10: 'var(--gold)', d12: 'var(--dragon)',
@@ -40,24 +40,31 @@ export function ClassesPage() {
       ) : classes.length === 0 ? (
         <EmptyState icon={GraduationCap} title="No classes found" description="Try a different search term" />
       ) : (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <motion.div variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05 } } }} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {classes.map((cls) => {
             const color = HIT_DIE_COLORS[cls.hit_die] ?? 'var(--accent)';
             return (
-              <Link key={cls.id} to={`/classes/${cls.id}`} className="card group">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center font-heading font-bold text-sm" style={{ background: `${color}20`, border: `1px solid ${color}`, color }}>
-                    {cls.hit_die}
+              <motion.div key={cls.id} variants={{ hidden: { opacity: 0, scale: 0.95 }, show: { opacity: 1, scale: 1 } }}>
+                <Link to={`/classes/${cls.id}`} className="card group flex flex-col h-full hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1 transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)]" style={{ backdropFilter: 'blur(12px)' }}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center font-heading font-black text-lg bg-gradient-to-br shadow-inner" style={{ background: `linear-gradient(135deg, ${color}40, ${color}10)`, border: `1px solid ${color}50`, color }}>
+                        {cls.hit_die}
+                      </div>
+                      <h2 className="font-heading font-bold text-xl group-hover:text-[var(--gold)] transition-colors">{cls.name}</h2>
+                    </div>
                   </div>
-                  <h2 className="font-heading font-bold text-lg group-hover:text-[var(--gold)] transition-colors">{cls.name}</h2>
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {cls.primary_ability?.map((a) => (
-                    <span key={a} className="text-xs font-ui px-2 py-0.5 rounded-full" style={{ background: 'var(--surface-raised)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>{a}</span>
-                  ))}
-                </div>
-                <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>{cls.source}</p>
-              </Link>
+                  <p className="text-sm mb-4 flex-1 line-clamp-3" style={{ color: 'var(--text-secondary)' }}>
+                    {cls.description || 'A legendary adventurer path.'}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 mt-auto pt-4" style={{ borderTop: '1px solid var(--border)' }}>
+                    {cls.primary_ability?.map((a) => (
+                      <span key={a} className="text-[10px] font-ui font-semibold uppercase tracking-widest px-2 py-1 rounded-md" style={{ background: 'var(--surface)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>{a}</span>
+                    ))}
+                    <span className="text-[10px] uppercase font-ui ml-auto mt-1" style={{ color: 'var(--text-muted)' }}>{cls.source}</span>
+                  </div>
+                </Link>
+              </motion.div>
             );
           })}
         </motion.div>

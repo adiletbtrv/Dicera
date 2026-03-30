@@ -81,7 +81,7 @@ export function processItems(inputPath: string, source: string = 'DMG') {
   return dedupeByName(items);
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && process.argv[1].endsWith('items.ts')) {
   const sources = [
     { path: join(DATA_DIR, 'raw/items-phb.json'), source: 'PHB' },
     { path: join(DATA_DIR, 'raw/items-dmg.json'), source: 'DMG' },

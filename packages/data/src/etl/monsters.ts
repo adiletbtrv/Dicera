@@ -191,7 +191,7 @@ export function processMonsters(inputPath: string, source: string = 'MM') {
   return dedupeByName(monsters);
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && process.argv[1].endsWith('monsters.ts')) {
   const sources = [
     { path: join(DATA_DIR, 'raw/monsters-mm.json'), source: 'MM' },
     { path: join(DATA_DIR, 'raw/monsters-vgm.json'), source: 'VGM' },

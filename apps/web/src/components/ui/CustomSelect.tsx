@@ -111,11 +111,11 @@ export function CustomSelect({ options, value, onChange, placeholder = 'Select..
                   }}
                   className="relative cursor-pointer select-none py-2 pl-3 pr-9 text-sm transition-colors"
                   style={{
-                    color: value === option.value ? 'var(--purple3, var(--text-primary))' : 'var(--text-secondary)',
-                    background: value === option.value ? 'rgba(139,92,246,.15)' : 'transparent',
+                    color: value === option.value ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    background: value === option.value ? 'var(--sidebar-active)' : 'transparent',
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(139,92,246,.12)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = value === option.value ? 'rgba(139,92,246,.15)' : 'transparent')}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--sidebar-hover)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = value === option.value ? 'var(--sidebar-active)' : 'transparent')}
                 >
                   <span className={cn('block truncate capitalize', value === option.value ? 'font-medium' : 'font-normal')}>
                     {option.label}
@@ -123,7 +123,7 @@ export function CustomSelect({ options, value, onChange, placeholder = 'Select..
 
                   {value === option.value ? (
                     <span className="absolute inset-y-0 right-0 flex items-center pr-3">
-                      <Check className="h-4 w-4" style={{ color: 'var(--purple2, var(--accent))' }} aria-hidden="true" />
+                      <Check className="h-4 w-4" style={{ color: 'var(--accent)' }} aria-hidden="true" />
                     </span>
                   ) : null}
                 </li>
@@ -149,7 +149,7 @@ export function CustomSelect({ options, value, onChange, placeholder = 'Select..
         </span>
         <ChevronDown
           className={cn('w-4 h-4 transition-transform duration-200', isOpen && 'rotate-180')}
-          style={{ color: 'var(--purple2, var(--accent))' }}
+          style={{ color: 'var(--accent)' }}
         />
       </button>
 

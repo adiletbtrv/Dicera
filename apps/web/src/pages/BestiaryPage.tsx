@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api.js';
@@ -19,6 +19,7 @@ interface Filters { q: string; type: string; size: string; cr: string; page: num
 export function BestiaryPage() {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<Filters>({ q: '', type: '', size: '', cr: '', page: 1 });
+  const [searchInput, setSearchInput] = useState(filters.q);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['monsters', filters],
@@ -32,9 +33,19 @@ export function BestiaryPage() {
 
   const update = useCallback(
     (key: keyof Filters, value: string | number) => {
-      setFilters((prev) => ({ ...prev, [key]: value, page: key === 'page' ? (value as number) : 1 }));
+      setFilters((prev) => {
+        if (prev[key] === value) return prev;
+        return { ...prev, [key]: value, page: key === 'page' ? (value as number) : 1 };
+      });
     }, [],
   );
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      update('q', searchInput);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [searchInput, update]);
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -51,8 +62,8 @@ export function BestiaryPage() {
       <div className="card mb-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="md:col-span-2">
-            <input type="search" placeholder="Search monsters..." value={filters.q}
-              onChange={(e) => update('q', e.target.value)} className="input" />
+            <input type="search" placeholder="Search monsters..." value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)} className="input" />
           </div>
           <CustomSelect
             value={filters.type}

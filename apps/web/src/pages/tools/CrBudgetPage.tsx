@@ -16,7 +16,7 @@ const XP_THRESHOLDS: Record<string, [number, number, number, number]> = {
 const CR_XP: Record<string, number> = { '0': 0, '1/8': 25, '1/4': 50, '1/2': 100, '1': 200, '2': 450, '3': 700, '4': 1100, '5': 1800, '6': 2300, '7': 2900, '8': 3900, '9': 5000, '10': 5900, '11': 7200, '12': 8400, '13': 10000, '14': 11500, '15': 13000, '16': 15000, '17': 18000, '18': 20000, '19': 22000, '20': 25000 };
 const MULT_TABLE = [[1], [1, 1.5], [1.5, 2], [2, 2, 2.5], [2, 2.5, 2.5, 3], [2.5, 2.5, 3, 3, 4]];
 const DIFFICULTIES = ['Easy', 'Medium', 'Hard', 'Deadly'];
-const DIFF_COLORS = ['var(--success)', 'var(--gold2)', 'var(--copper)', 'var(--dragon)'];
+const DIFF_COLORS = ['var(--teal)', 'var(--gold)', 'var(--copper)', 'var(--dragon)'];
 
 export function CrBudgetPage() {
   const [partySize, setPartySize] = useState(4);

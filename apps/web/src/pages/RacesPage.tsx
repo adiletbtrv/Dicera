@@ -51,10 +51,14 @@ export function RacesPage() {
               .join(', ');
             return (
               <Link key={race.id} to={`/races/${race.id}`} className="card hover:border-[var(--teal)] group">
-                <h2 className="font-heading font-bold text-lg mb-1 group-hover:text-[var(--teal)] transition-colors" style={{ color: 'var(--text-primary)' }}>{race.name}</h2>
-                <div className="flex items-center gap-2 flex-wrap mb-2">
-                  <span className="badge-level text-xs">{race.size}</span>
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{race.speed} ft</span>
+                <h2 className="font-heading font-bold text-lg mb-2 group-hover:text-[var(--teal)] transition-colors" style={{ color: 'var(--text-primary)' }}>{race.name}</h2>
+                <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+                  <span className="px-2.5 py-1 rounded-md text-xs font-semibold uppercase tracking-wider" style={{ background: 'var(--surface-raised)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+                    {race.size}
+                  </span>
+                  <span className="px-2.5 py-1 rounded-md text-xs font-semibold" style={{ background: 'var(--surface)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                    {race.speed} ft.
+                  </span>
                 </div>
                 {asis && <p className="text-xs font-ui" style={{ color: 'var(--teal2)' }}>{asis}</p>}
                 <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{race.source}</p>

@@ -40,11 +40,11 @@ const config: Config = {
         },
       },
       fontFamily: {
-        heading: ['Montserrat', 'system-ui', 'sans-serif'],
-        body: ['Roboto', 'system-ui', 'sans-serif'],
-        ui: ['Rubik', 'system-ui', 'sans-serif'],
+        heading: ['Outfit', 'system-ui', 'sans-serif'],
+        body: ['Inter', 'system-ui', 'sans-serif'],
+        ui: ['Inter', 'system-ui', 'sans-serif'],
         mono: ['Fira Code', 'monospace'],
-        serif: ['Montserrat', 'system-ui', 'sans-serif'],
+        serif: ['Outfit', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
         '2xl': '1rem',

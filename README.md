@@ -1,81 +1,71 @@
-# Dicera 5e
+# Dicera Platform
 
-Dicera is a modern, enterprise-grade Dungeons & Dragons 5th Edition digital toolkit. It provides a highly responsive, animated, and reliable platform for character management, compendium reference, encounter building, and campaign tracking.
+An enterprise-grade, fully functional platform for **Dungeons & Dragons 5th Edition**.
 
-## Architecture & Tech Stack
+Dicera provides every mathematical, archival, and DM-assistant tool required for a high-end 5e tabletop experience, wrapped in an elegant, responsive "Apple-tier" web interface driven by `Framer Motion` and modern Tailwind CSS glassmorphism.
 
-This repository is structured as an npm monorepo with dedicated `apps` and `packages` workspaces.
+## Features
 
-### Frontend (`apps/web`)
-- **Framework**: React 18 / Vite / TypeScript
-- **Styling**: TailwindCSS with Custom CSS Variables (Amon Fudo Theme)
-- **State**: Zustand (App state) & TanStack Query (Server state)
-- **Animations**: Framer Motion
-- **Features**: Canvas Map Viewer, Native HTML5 Drag and Drop, Fully Mobile Responsive Grid
+- **Compendiums**: Searchable Spells, Bestiary, Items, Backgrounds, Feats, Races, and Classes with offline-first caching via `TanStack Query`.
+- **Character Builder**: Mathematically sound rules engine computing hit points, proficiencies, and saving throws.
+- **Encounter Runner**: DM tools encompassing CR budgets, Initiative tracking, and loot generation.
+- **Custom Hardware Seed**: Bypasses the open-source D&D licensing limitations by aggressively seeding missing popular sub-classes, thematic descriptions, Feats, and Backgrounds directly into its local Postgres data store.
+- **AI Integration**: Connects to advanced AI platforms for rules lookup and dynamic campaign dialogue generation.
 
-### Backend (`apps/api`)
-- **Server**: Node.js + Express
-- **Language**: TypeScript
-- **Database**: PostgreSQL (using `pg` driver)
-- **Vectors**: `pgvector` for upcoming AI RAG features
-- **Design Pattern**: Router-Controller pattern with raw SQL queries for absolute execution speed and control
+## Technology Stack
 
-### Shared (`packages/data` & `packages/ai`)
-- **Data Schemas**: Shared Zod schemas for end-to-end type safety between the frontend and database
-- **ETL Pipelines**: Node scripts that process external raw API JSON into fully normalized, database-ready output for rapid seeding
+- **Frontend**: React 18 / Vite / TypeScript / Tailwind CSS / Framer Motion
+- **Backend Framework**: Node.js monorepo architecture (`@dnd/web`, `@dnd/api`, `@dnd/data`)
+- **Database**: PostgreSQL interfaced via Prisma.
+- **Design Language**: Custom deep-surface glassmorphism paired with elite typography (`Outfit` & `Inter`).
+- **Data Pipeline**: Purpose-built Node ETL scripts parsing raw Open-Gaming License 5e-bits payload data locally.
 
-## Quick Setup
+## Getting Started
 
-### 1. Requirements
-- Node.js `v20+` or `v22+`
-- PostgreSQL `15+` (with `pgvector` and `pg_trgm` extensions enabled)
-
-### 2. Environment Variables
-You must provide `.env` files in both the frontend and backend directories.
-
-**`apps/api/.env`**:
-```env
-# Standard Postgres Connection String
-DATABASE_URL=postgresql://user:password@localhost:5432/dicera
-
-# API Port
-PORT=3001
-```
-
-**`apps/web/.env`**:
-```env
-# URL to Local or Remote API
-VITE_API_URL=http://localhost:3001
-```
-
-### 3. Installation & Preparation
+### 1. Installation
+Install all monorepo dependencies.
 ```bash
-# Install dependencies for all workspaces
 npm install
-
-# Build the shared packages
-npm run build:packages
-
-# Pull missing 5e-bits raw API json for the ETL pipeline
-npm run data:download
-
-# Parse, transform, and normalize the raw data
-npm run data:etl
-
-# Migrate the database schema and seed the entire 5e structural compendium
-npm run db:setup
 ```
 
-### 4. Running the Ecosystem
-To run everything concurrently in development mode:
+### 2. Environment Setup
+Configure the backend environmental variables in `apps/api/.env`.
+```
+PORT=3000
+DATABASE_URL="postgresql://user:password@localhost:5432/dicera"
+JWT_SECRET="super-secret-key"
+```
+
+Configure the frontend API endpoints in `apps/web/.env`:
+```
+VITE_API_URL="http://localhost:3000/api"
+```
+
+### 3. Database Seeding & Pipeline
+Since the system relies on localized DB instances rather than an external 5e API, you must inject the data:
+
+```bash
+# Parse all raw 5e JSON datasets and construct valid insert payloads
+npm run etl:all --workspace=@dnd/data
+
+# Push Prisma Database schema
+npm run db:setup --workspace=@dnd/api
+
+# Inject parsed ETL output into PostgreSQL
+npm run db:seed --workspace=@dnd/api
+```
+
+### 4. Initiate Servers
+Start both the Frontend and the Backend concurrently.
 ```bash
 npm run dev
 ```
 
-The frontend will be available at `http://localhost:3000` and the API at `http://localhost:3001`.
+## Deployment (Vercel)
 
-## Core Features
-1. **Compendium**: 14 distinct interconnected pages mapping out spells, monsters, races, backgrounds, classes, feats, conditions, weapons, and magic items. Lookups utilize Postgres trigram searching for extreme speed.
-2. **Character Builder**: Advanced 4-step wizard saving locally or natively into the DB. Contains an integrated interactive sheet spanning Saves, Skills, Spells, HP adjustments, and features.
-3. **DM Tools**: Integrated Encounter builders, dynamic map panning, CR budgeting, Initiative tracking, and scaled loot generators.
-4. **Resilient**: Fully typed using Zod boundaries, and automatically recovers from database network interruptions. Includes a beautiful skeleton loading architecture for clean transitions. 
+The `/apps/web` client is pre-configured with a perfect SPA routing file (`vercel.json`) ensuring that client-side navigations to specific deeply nested character/spell pages don't return 404 errors on browser refreshes.
+
+You can host `/apps/web` cleanly on **Vercel** or **Netlify** automatically, provided you update the `VITE_API_URL` to point heavily toward your deployed Node/Express Postgres database endpoint.
+
+## License
+Open-Gaming License 5.1 (Wizards of the Coast). Proprietary source platform code by the Dicera Architects.

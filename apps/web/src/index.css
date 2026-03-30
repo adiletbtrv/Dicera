@@ -122,8 +122,8 @@
     position: fixed;
     inset: 0;
     background:
-      radial-gradient(ellipse 70% 40% at 50% -10%, rgba(139,92,246,.14) 0%, transparent 60%),
-      radial-gradient(ellipse 35% 35% at 85% 85%, rgba(20,184,166,.06) 0%, transparent 50%);
+      radial-gradient(ellipse 70% 40% at 50% -10%, rgba(139, 92, 246, .14) 0%, transparent 60%),
+      radial-gradient(ellipse 35% 35% at 85% 85%, rgba(20, 184, 166, .06) 0%, transparent 50%);
     pointer-events: none;
     z-index: 0;
   }
@@ -206,16 +206,21 @@
 
   /* ── Cards ── */
   .card {
-    @apply relative rounded-2xl p-5 transition-all duration-200 ease-apple;
+    @apply relative rounded-[1.25rem] p-5 transition-all duration-300;
+    transition-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
     background: var(--surface);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-subtle);
     box-shadow: var(--shadow-sm);
+    content-visibility: auto;
+    contain-intrinsic-size: 0 150px;
   }
 
   .card:hover {
     border-color: var(--border);
     box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
   }
 
   .card-parchment {
@@ -276,7 +281,8 @@
     -moz-appearance: textfield;
     appearance: textfield;
   }
-  input[type="number"]::-webkit-inner-spin-button, 
+
+  input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button {
     -webkit-appearance: none;
     appearance: none;
@@ -365,17 +371,20 @@
    ────────────────────────────────────────────────────────────── */
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .skeleton-shimmer {
-  background: linear-gradient(
-    90deg,
-    var(--surface-raised) 25%,
-    var(--surface) 50%,
-    var(--surface-raised) 75%
-  );
+  background: linear-gradient(90deg,
+      var(--surface-raised) 25%,
+      var(--surface) 50%,
+      var(--surface-raised) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
@@ -430,6 +439,7 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
   .mobile-scroll::-webkit-scrollbar {
     display: none;
   }

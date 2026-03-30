@@ -143,8 +143,8 @@ router.post('/npc/dialogue', requireAuth, async (req, res, next) => {
       content: m.content,
     }));
 
-    const response = await safeAiCall(() => bot.generateDialogue(body.persona as any, body.message, history));
-    rateLimiter.record(req.user!.id, response.usage?.total_tokens);
+    const response = await safeAiCall(() => bot.generateDialogue(body.persona as any, body.message, history)) as any;
+    rateLimiter.record(req.user!.id, response.usage?.total_tokens) as any;
 
     res.json({ reply: response.content, model: response.model });
   } catch (err) {
@@ -292,7 +292,7 @@ router.post('/dm/chat', requireAuth, async (req, res, next) => {
     const response = await safeAiCall(() => dm.chat(
       history.map((m) => ({ role: m.role, content: m.content })),
       message,
-    ));
+    )) as any;
     rateLimiter.record(req.user!.id, response.usage?.total_tokens);
 
     res.json({ reply: response.content, model: response.model });

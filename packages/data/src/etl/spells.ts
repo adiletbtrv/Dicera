@@ -105,7 +105,7 @@ export function processSpells(inputPath: string, source: string = 'PHB') {
   return dedupeByName(spells);
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && process.argv[1].endsWith('spells.ts')) {
   const sources = [
     { path: join(DATA_DIR, 'raw/spells-phb.json'), source: 'PHB' },
     { path: join(DATA_DIR, 'raw/spells-xge.json'), source: 'XGE' },

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '@/store/auth.js';
 import { Sparkles, Skull, Shield, Scroll, Swords, Dice5, Map as MapIcon, Wand2, Bot } from 'lucide-react';
+import { Logo } from '@/components/ui/Logo.js';
 
 const features = [
   { to: '/spells', icon: Sparkles, title: 'Spell Compendium', desc: 'Browse, filter, and search all 5e spells by class, level, school, and more.' },
@@ -37,10 +38,10 @@ export function HomePage() {
         className="text-center py-12"
       >
         <div
-          className="inline-flex items-center justify-center p-3.5 mb-6 rounded-2xl"
-          style={{ background: 'var(--accent-muted)', border: '1px solid var(--border)' }}
+          className="inline-flex items-center justify-center p-4 mb-8 rounded-[1.25rem] shadow-xl"
+          style={{ background: 'linear-gradient(135deg, var(--accent-muted), transparent)', border: '1px solid var(--border-subtle)' }}
         >
-          <Shield className="w-10 h-10" style={{ color: 'var(--accent)' }} />
+          <Logo className="w-14 h-14" />
         </div>
         <h1 className="font-heading text-5xl md:text-7xl font-bold mb-6 tracking-tight" style={{ color: 'var(--text-primary)' }}>
           Welcome to <span style={{ color: 'var(--purple2)' }}>Dicera</span>

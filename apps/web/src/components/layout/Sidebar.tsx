@@ -3,10 +3,11 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils.js';
 import {
-  Home, Sparkles, Sword, Scroll, Dice5, Map as MapIcon, Wand2, Bot, Skull, Swords,
-  Users, GraduationCap, BookOpen, Shield, Package, Star, BookOpenCheck,
-  ChevronDown, Wrench, Trophy, User,
+  Home, Sword, Scroll, Dice5, Map as MapIcon, Wand2, Bot, Skull, Swords,
+  Users, GraduationCap, BookOpen, Shield, Package, Star, BookMarked, Gem,
+  ChevronDown, Wrench, Trophy, User, Pickaxe
 } from 'lucide-react';
+import { Logo } from '@/components/ui/Logo.js';
 
 interface NavSection {
   label: string;
@@ -23,7 +24,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: 'Compendium',
     items: [
-      { to: '/spells', label: 'Spells', icon: Sparkles },
+      { to: '/spells', label: 'Spells', icon: Wand2 },
       { to: '/bestiary', label: 'Bestiary', icon: Skull },
       { to: '/races', label: 'Races', icon: Users },
       { to: '/classes', label: 'Classes', icon: GraduationCap },
@@ -31,8 +32,8 @@ const NAV_SECTIONS: NavSection[] = [
       { to: '/feats', label: 'Feats', icon: Star },
       { to: '/conditions', label: 'Conditions', icon: Shield },
       { to: '/equipment', label: 'Equipment', icon: Package },
-      { to: '/magic-items', label: 'Magic Items', icon: Sparkles },
-      { to: '/rules', label: 'Rules Reference', icon: BookOpenCheck },
+      { to: '/magic-items', label: 'Magic Items', icon: Gem },
+      { to: '/rules', label: 'Rules Reference', icon: BookMarked },
     ],
   },
   {
@@ -49,9 +50,9 @@ const NAV_SECTIONS: NavSection[] = [
     label: 'DM Tools',
     items: [
       { to: '/tools/initiative', label: 'Initiative', icon: Swords },
-      { to: '/tools/spell-slots', label: 'Spell Slots', icon: Sparkles },
+      { to: '/tools/spell-slots', label: 'Spell Slots', icon: Pickaxe },
       { to: '/tools/cr-budget', label: 'CR Budget', icon: Trophy },
-      { to: '/tools/loot', label: 'Loot Generator', icon: Package },
+      { to: '/tools/loot', label: 'Loot Generator', icon: Wrench },
       { to: '/tools/names', label: 'Name Generator', icon: User },
     ],
   },
@@ -137,15 +138,15 @@ export function Sidebar() {
       style={{ background: 'var(--sidebar-bg)', borderRight: '1px solid var(--sidebar-border)' }}
     >
       <div className="p-5" style={{ borderBottom: '1px solid var(--sidebar-border)' }}>
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-gradient-to-br from-arcane-500 to-arcane-700 shadow-lg">
-            <Sword className="w-5 h-5 text-white" />
+        <NavLink to="/" className="flex items-center gap-3 group">
+          <div className="w-10 h-10 flex-shrink-0 group-hover:scale-110 transition-transform duration-300 ease-apple">
+            <Logo className="w-full h-full drop-shadow-lg" />
           </div>
-          <div>
-            <span className="font-heading text-xl font-bold tracking-tight" style={{ color: 'var(--purple2)' }}>Dicera</span>
-            <p className="text-xs font-ui" style={{ color: 'var(--text-muted)' }}>5th Edition Toolkit</p>
+          <div className="flex flex-col">
+            <span className="font-heading text-xl font-bold tracking-tight leading-none mb-1 group-hover:text-[var(--accent)] transition-colors" style={{ color: 'var(--text-primary)' }}>Dicera</span>
+            <span className="text-[10px] uppercase tracking-wider font-ui font-medium opacity-80" style={{ color: 'var(--text-muted)' }}>D&D 5e Toolset</span>
           </div>
-        </div>
+        </NavLink>
       </div>
 
       <nav className="flex-1 overflow-y-auto p-3 scrollbar-thin">

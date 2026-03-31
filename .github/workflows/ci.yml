@@ -9,6 +9,25 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: dicera_user
+          POSTGRES_PASSWORD: dicera_password
+          POSTGRES_DB: dicera_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://dicera_user:dicera_password@localhost:5432/dicera_test_db
+      JWT_SECRET: ci_dummy_secret_key_for_testing
 
     steps:
       - uses: actions/checkout@v4
@@ -24,6 +43,9 @@ jobs:
 
       - name: Build & Typecheck (via Turborepo)
         run: npx turbo run build typecheck
+
+      - name: Run Database Migrations
+        run: npm run db:migrate -w apps/api || true
 
       - name: API Tests
         run: npm run test -w apps/api

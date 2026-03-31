@@ -26,8 +26,16 @@ jobs:
           --health-retries 5
 
     env:
+      NODE_ENV: test
       DATABASE_URL: postgresql://dicera_user:dicera_password@localhost:5432/dicera_test_db
-      JWT_SECRET: ci_dummy_secret_key_for_testing
+      JWT_SECRET: ci_dummy_secret_key_for_testing_32chars
+      JWT_EXPIRY: 7d
+      PORT: "3001"
+      CORS_ORIGIN: http://localhost:3000
+      AI_PROVIDER: gemini
+      GEMINI_API_KEY: dummy-gemini-key-ci
+      OPENAI_API_KEY: sk-dummy-openai-key-ci
+      HUGGINGFACE_API_KEY: dummy-huggingface-key-ci
 
     steps:
       - uses: actions/checkout@v4

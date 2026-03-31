@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api.js';
-import { ChevronLeft, Shield, Heart, Zap, Award, Scroll, Swords, Edit2, Check, X, Skull } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, Heart, Scroll, Swords, Edit2, Check, X } from 'lucide-react';
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { abilityModifier, formatModifier, capitalize } from '@/lib/utils.js';
 import { useToastStore } from '@/store/toast.js';
 import { DetailSkeleton } from '@/components/SkeletonLoader.js';
@@ -53,12 +53,21 @@ function HpBar({ current, max }: { current: number; max: number }) {
   const color = pct >= 60 ? 'var(--success)' : pct >= 30 ? 'var(--gold)' : 'var(--red)';
   return (
     <div className="relative h-7 rounded-full overflow-hidden my-2 border border-[var(--border)]" style={{ background: 'var(--bg3)' }}>
-      <motion.div animate={{ width: `${pct}%` }} transition={{ duration: 0.5 }} className="absolute top-0 bottom-0 left-0 rounded-full" style={{ background: color }}>
+      <motion.div
+        layout
+        animate={{ width: `${pct}%` }}
+        transition={{ type: 'spring', stiffness: 120, damping: 20 }}
+        className="absolute top-0 bottom-0 left-0 rounded-full"
+        style={{ background: color }}
+      >
         <div className="absolute top-1 left-2 right-2 h-1 rounded-sm bg-white/20" />
       </motion.div>
-      <div className="absolute inset-0 flex items-center justify-center font-heading font-bold text-sm text-white drop-shadow-md tracking-wider">
+      <motion.div
+        layout
+        className="absolute inset-0 flex items-center justify-center font-heading font-bold text-sm text-white drop-shadow-md tracking-wider"
+      >
         {current} / {max}
-      </div>
+      </motion.div>
     </div>
   );
 }
@@ -79,13 +88,34 @@ export function CharacterSheetPage() {
   });
 
   const updateHpMut = useMutation({
-    mutationFn: (hp: number) => api.patch(`/characters/${id}`, { current_hit_points: Math.max(0, hp) }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['character', id] });
+    mutationFn: (hp: number) =>
+      api.patch<DbCharacter>(`/characters/${id}`, { current_hit_points: Math.max(0, hp) }),
+    onMutate: async (newHp: number) => {
+      // Cancel any in-flight refetches so they don't race our optimistic write
+      await qc.cancelQueries({ queryKey: ['character', id] });
+      // Snapshot state we can roll back to on failure
+      const previousChar = qc.getQueryData<DbCharacter>(['character', id]);
+      // Apply optimistic update — UI reflects the new value immediately
+      qc.setQueryData<DbCharacter>(['character', id], (old) =>
+        old ? { ...old, current_hit_points: Math.max(0, newHp) } : old
+      );
       setEditHp(false);
-      toast({ type: 'success', message: 'HP updated', duration: 2000 });
+      return { previousChar };
     },
-    onError: () => toast({ type: 'error', message: 'Failed to update HP', duration: 3000 }),
+    onError: (_err, _newHp, context) => {
+      // Server rejected — roll back to the last known-good snapshot
+      if (context?.previousChar) {
+        qc.setQueryData(['character', id], context.previousChar);
+      }
+      toast({ type: 'error', message: 'Sync failed — HP reverted.', duration: 4000 });
+    },
+    onSuccess: () => {
+      toast({ type: 'success', message: 'HP saved', duration: 2000 });
+    },
+    onSettled: () => {
+      // Background sync to ensure server truth wins eventually
+      qc.invalidateQueries({ queryKey: ['character', id] });
+    },
   });
 
   if (isLoading || !data) {
@@ -211,8 +241,9 @@ export function CharacterSheetPage() {
       </div>
 
       {/* Panels */}
+      <LayoutGroup>
       <AnimatePresence mode="wait">
-        <motion.div key={activeTab} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+        <motion.div layout key={activeTab} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
 
           {activeTab === 'Overview' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -347,6 +378,7 @@ export function CharacterSheetPage() {
           )}
         </motion.div>
       </AnimatePresence>
+      </LayoutGroup>
     </div>
   );
 }

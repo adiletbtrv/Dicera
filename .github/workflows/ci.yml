@@ -22,18 +22,11 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      # ENTERPRISE FIX: Build dependencies FIRST so their .d.ts files exist!
-      - name: Build Internal Packages
-        run: npm run build -w packages/data -w packages/ai
-
-      - name: Typecheck
-        run: npm run typecheck
+      - name: Build & Typecheck (via Turborepo)
+        run: npx turbo run build typecheck
 
       - name: API Tests
         run: npm run test -w apps/api
 
       - name: Frontend Tests
         run: npm run test -w apps/web
-
-      - name: Build App
-        run: npm run build

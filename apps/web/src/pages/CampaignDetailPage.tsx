@@ -4,7 +4,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { ChevronLeft, Users, Map, Scroll, Plus, Trash2, Edit2, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { abilityModifier, formatModifier, capitalize } from '@/lib/utils.js';
 import { useToastStore } from '@/store/toast';
+import { DetailSkeleton } from '@/components/SkeletonLoader';
 
 interface NPC { id: string; name: string; role: string; description?: string }
 interface Session { id: string; title: string; session_number: number; date: string; summary: string }
@@ -76,8 +78,10 @@ export function CampaignDetailPage() {
     onError: () => toast({ type: 'error', message: 'Failed to save notes. Run DB migrations.', duration: 5000 }),
   });
 
-  if (isLoading) return <div className="text-center py-12" style={{ color: 'var(--text-muted)' }}>Loading...</div>;
-  if (isError || !data) return <div className="text-center py-12" style={{ color: 'var(--dragon)' }}>Campaign not found or failed to load.</div>;
+  if (isLoading || !data) {
+    if (isError) throw new Error('Campaign not found or failed to load.');
+    return <div className="py-12"><DetailSkeleton /></div>;
+  }
 
   const npcs = data.npcs ?? [];
   const sessions = data.sessions ?? [];

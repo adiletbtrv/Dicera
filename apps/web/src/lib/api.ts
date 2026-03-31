@@ -1,6 +1,6 @@
 import { z } from 'zod';
-const BASE_URL = import.meta.env['VITE_API_URL'] ? `${import.meta.env['VITE_API_URL']}/api` : '/api';
-
+import { env } from '../env.js';
+const BASE_URL = env.VITE_API_URL;
 class ApiClient {
   private token: string | null = null;
 

@@ -100,3 +100,12 @@ export const XP_BY_CR: Record<string, number> = {
 export type Encounter = z.infer<typeof EncounterSchema>;
 export type EncounterDifficulty = z.infer<typeof EncounterDifficultySchema>;
 export type EncounterMonster = z.infer<typeof EncounterMonsterSchema>;
+
+export const MULT_TABLE = [
+  [1], 
+  [1, 1.5], 
+  [1.5, 2], 
+  [2, 2, 2.5], 
+  [2, 2.5, 2.5, 3], 
+  [2.5, 2.5, 3, 3, 4]
+];

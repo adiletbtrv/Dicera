@@ -13,10 +13,10 @@ const DiceRollSchema = z.object({
   campaign_id: z.string().uuid().optional(),
 });
 
-const DICE_REGEX = /^(\d+)d(\d+)([+-]\d+)?$/i;
-const MULTI_DICE_REGEX = /(\d+)d(\d+)/gi;
+export const DICE_REGEX = /^(\d+)d(\d+)([+-]\d+)?$/i;
+export const MULTI_DICE_REGEX = /(\d+)d(\d+)/gi;
 
-interface RollResult {
+export interface RollResult {
   expression: string;
   total: number;
   rolls: Array<{ die: number; value: number }>;
@@ -24,11 +24,11 @@ interface RollResult {
   breakdown: string;
 }
 
-function rollDie(sides: number): number {
+export function rollDie(sides: number): number {
   return Math.floor(Math.random() * sides) + 1;
 }
 
-function parseSingleExpression(expr: string): RollResult | null {
+export function parseSingleExpression(expr: string): RollResult | null {
   const trimmed = expr.trim();
   const match = DICE_REGEX.exec(trimmed);
   if (!match) {
@@ -61,7 +61,7 @@ function parseSingleExpression(expr: string): RollResult | null {
   return { expression: trimmed, total, rolls, modifier, breakdown };
 }
 
-function parseComplexExpression(expr: string): RollResult {
+export function parseComplexExpression(expr: string): RollResult {
   const parts = expr.split(/(?=[+-])/);
   const allRolls: Array<{ die: number; value: number }> = [];
   let total = 0;
@@ -90,7 +90,7 @@ function parseComplexExpression(expr: string): RollResult {
   };
 }
 
-function parseExpression(expr: string): RollResult {
+export function parseExpression(expr: string): RollResult {
   const cleanExpr = expr.trim().toLowerCase();
 
   if (DICE_REGEX.test(cleanExpr)) {

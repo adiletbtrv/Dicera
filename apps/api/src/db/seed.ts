@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { readFileSync, existsSync } from 'fs';
+import { PoolClient } from 'pg';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { pool, transaction } from './client.js';
@@ -7,7 +8,7 @@ import { pool, transaction } from './client.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(__dirname, '../../../../packages/data/output');
 
-async function bulkInsert(client: any, table: string, columns: string[], rows: unknown[][], conflictSql: string) {
+async function bulkInsert(client: PoolClient, table: string, columns: string[], rows: unknown[][], conflictSql: string) {
   if (rows.length === 0) return;
   const CHUNK_SIZE = Math.floor(60000 / columns.length);
   for (let i = 0; i < rows.length; i += CHUNK_SIZE) {

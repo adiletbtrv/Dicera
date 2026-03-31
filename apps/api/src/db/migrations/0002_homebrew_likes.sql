@@ -1,0 +1,1 @@
+ALTER TABLE homebrew ADD COLUMN IF NOT EXISTS liked_by UUID[] DEFAULT '{}';

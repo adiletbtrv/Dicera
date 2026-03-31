@@ -1,4 +1,4 @@
-import { chunkText } from '@dnd/data';
+import { chunkText } from '@dnd/data/dist/etl/utils.js';
 import type { LlmProvider, RagChunk, RagResult, VectorStore } from '../types.js';
 import { createHash } from 'crypto';
 

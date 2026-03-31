@@ -7,19 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface EncounterMonster { monster_id: string; monster_name: string; quantity: number; xp_each: number; cr: string }
 interface DifficultyResult { difficulty: string; totalXp: number; adjustedXp: number; xpPerPlayer: number }
 
-const XP_BY_CR: Record<string, number> = { '0': 10, '1/8': 25, '1/4': 50, '1/2': 100, '1': 200, '2': 450, '3': 700, '4': 1100, '5': 1800, '6': 2300, '7': 2900, '8': 3900, '9': 5000, '10': 5900 };
-
-const XP_THRESHOLDS: Record<string, [number, number, number, number]> = {
-  '1': [25, 50, 75, 100], '2': [50, 100, 150, 200], '3': [75, 150, 225, 400],
-  '4': [125, 250, 375, 500], '5': [250, 500, 750, 1100], '6': [300, 600, 900, 1400],
-  '7': [350, 750, 1100, 1700], '8': [450, 900, 1400, 2100], '9': [550, 1100, 1600, 2400],
-  '10': [600, 1200, 1900, 2800], '11': [800, 1600, 2400, 3600], '12': [1000, 2000, 3000, 4500],
-  '13': [1100, 2200, 3400, 5100], '14': [1250, 2500, 3800, 5700], '15': [1400, 2800, 4300, 6400],
-  '16': [1600, 3200, 4800, 7200], '17': [2000, 3900, 5900, 8800], '18': [2100, 4200, 6300, 9500],
-  '19': [2400, 4900, 7300, 10900], '20': [2800, 5700, 8500, 12700],
-};
-
-const MULT_TABLE = [[1], [1, 1.5], [1.5, 2], [2, 2, 2.5], [2, 2.5, 2.5, 3], [2.5, 2.5, 3, 3, 4]];
+import { XP_BY_CR, XP_THRESHOLDS_BY_LEVEL as XP_THRESHOLDS, MULT_TABLE } from '@dnd/data';
 
 export function EncounterBuilderPage() {
   const {
@@ -45,7 +33,8 @@ export function EncounterBuilderPage() {
 
     const adjustedXp = Math.round(totalXp * mult);
     const xpPerPlayer = Math.round(adjustedXp / partySize);
-    const thresholds = (XP_THRESHOLDS[String(partyLevel)] ?? [0, 0, 0, 0]).map((t) => t * partySize);
+    const tObj = XP_THRESHOLDS[partyLevel as keyof typeof XP_THRESHOLDS] ?? { easy: 0, medium: 0, hard: 0, deadly: 0 };
+    const thresholds = [tObj.easy ?? 0, tObj.medium ?? 0, tObj.hard ?? 0, tObj.deadly ?? 0].map((t) => t * partySize);
 
     let difficulty = 'trivial';
     if (adjustedXp >= (thresholds[3] ?? 0)) difficulty = 'deadly';

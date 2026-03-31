@@ -6,6 +6,7 @@ import { ChevronLeft, Shield, Heart, Zap, Award, Scroll, Swords, Edit2, Check, X
 import { motion, AnimatePresence } from 'framer-motion';
 import { abilityModifier, formatModifier, capitalize } from '@/lib/utils.js';
 import { useToastStore } from '@/store/toast.js';
+import { DetailSkeleton } from '@/components/SkeletonLoader.js';
 
 interface DbCharacter {
   id: string;
@@ -71,7 +72,7 @@ export function CharacterSheetPage() {
   const [editHp, setEditHp] = useState(false);
   const [hpInput, setHpInput] = useState('');
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['character', id],
     queryFn: () => api.get<DbCharacter>(`/characters/${id}`),
     enabled: !!id,
@@ -87,8 +88,10 @@ export function CharacterSheetPage() {
     onError: () => toast({ type: 'error', message: 'Failed to update HP', duration: 3000 }),
   });
 
-  if (isLoading) return <div className="text-center py-12 font-ui" style={{ color: 'var(--text-muted)' }}>Loading character...</div>;
-  if (!data) return <div className="text-center py-12 font-ui" style={{ color: 'var(--dragon)' }}>Character not found.</div>;
+  if (isLoading || !data) {
+    if (isError) throw new Error('Character not found.');
+    return <div className="py-12"><DetailSkeleton /></div>;
+  }
 
   const stats = data.ability_scores ?? { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 };
   const charClassStr = data.classes?.map((c) => `${c.class_name} ${c.level}`).join(' / ') ?? 'Unknown';

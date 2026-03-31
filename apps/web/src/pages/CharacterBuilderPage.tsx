@@ -4,13 +4,40 @@ import { api } from '@/lib/api.js';
 import { CustomSelect } from '@/components/ui/CustomSelect.js';
 import { Shield, ChevronLeft, Save, Upload } from 'lucide-react';
 import { DND_CLASSES, DND_RACES, capitalize } from '@/lib/utils.js';
+import { z } from 'zod';
+import { useToastStore } from '@/store/toast.js';
 
+const LssSchema = z.object({
+  name: z.object({ value: z.string() }).passthrough().optional(),
+  info: z.object({
+    charClass: z.object({ value: z.string() }).passthrough().optional(),
+    race: z.object({ value: z.string() }).passthrough().optional(),
+    level: z.object({ value: z.union([z.string(), z.number()]) }).passthrough().optional(),
+    background: z.object({ value: z.string() }).passthrough().optional(),
+    alignment: z.object({ value: z.string() }).passthrough().optional(),
+  }).passthrough().optional(),
+  stats: z.object({
+    str: z.object({ score: z.number().optional() }).passthrough().optional(),
+    dex: z.object({ score: z.number().optional() }).passthrough().optional(),
+    con: z.object({ score: z.number().optional() }).passthrough().optional(),
+    int: z.object({ score: z.number().optional() }).passthrough().optional(),
+    wis: z.object({ score: z.number().optional() }).passthrough().optional(),
+    cha: z.object({ score: z.number().optional() }).passthrough().optional()
+  }).passthrough().optional(),
+  vitality: z.object({
+    'hp-max': z.object({ value: z.number().optional() }).passthrough().optional(),
+    'hp-current': z.object({ value: z.number().optional() }).passthrough().optional(),
+    ac: z.object({ value: z.number().optional() }).passthrough().optional(),
+  }).passthrough().optional(),
+  proficiency: z.number().optional(),
+}).passthrough();
 export function CharacterBuilderPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({ name: '', race: 'human', class: 'fighter', level: 1 });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const toast = useToastStore((s) => s.add);
 
   useEffect(() => {
     if (id) {
@@ -39,7 +66,8 @@ export function CharacterBuilderPage() {
         const rootNode = JSON.parse(text);
         if (!rootNode.data) throw new Error("Could not find 'data' in imported LSS JSON");
         
-        const lss = typeof rootNode.data === 'string' ? JSON.parse(rootNode.data) : rootNode.data;
+        const rawData = typeof rootNode.data === 'string' ? JSON.parse(rootNode.data) : rootNode.data;
+        const lss = LssSchema.parse(rawData);
         
         const importedName = lss.name?.value || "Imported Character";
         const importedClass = lss.info?.charClass?.value || 'fighter';
@@ -53,43 +81,43 @@ export function CharacterBuilderPage() {
           level: importedLevel
         });
         
-        if (confirm(`Successfully parsed ${importedName}! Save immediately?`)) {
-          setIsSubmitting(true);
-          try {
-            await api.post('/characters', {
-              name: importedName,
-              race_id: importedRace.toLowerCase().replace(/ /g, '-'),
-              race_name: importedRace,
-              background_id: lss.info?.background?.value?.toLowerCase() || 'bg-1',
-              background_name: lss.info?.background?.value || 'Unknown',
-              alignment: lss.info?.alignment?.value || 'true neutral',
-              classes: [{ class_id: importedClass.toLowerCase().replace(/ /g, '-'), class_name: importedClass, level: importedLevel }],
-              total_level: importedLevel,
-              ability_scores: { 
-                str: lss.stats?.str?.score || 10, 
-                dex: lss.stats?.dex?.score || 10, 
-                con: lss.stats?.con?.score || 10, 
-                int: lss.stats?.int?.score || 10, 
-                wis: lss.stats?.wis?.score || 10, 
-                cha: lss.stats?.cha?.score || 10 
-              },
-              max_hit_points: lss.vitality?.['hp-max']?.value || (10 * importedLevel),
-              current_hit_points: lss.vitality?.['hp-current']?.value || (10 * importedLevel),
-              hit_dice_total: `${importedLevel}d8`,
-              armor_class: lss.vitality?.ac?.value || 10,
-              proficiency_bonus: lss.proficiency || Math.floor(2 + (importedLevel - 1) / 4)
-            });
-            navigate('/characters');
-          } catch (err) {
-            console.error("LSS Save Error:", err);
-            alert('Failed to save imported character to database.');
-          } finally {
-            setIsSubmitting(false);
-          }
+        toast({ type: 'success', message: `Parsed ${importedName}! Saving to database...`, duration: 3000 });
+        setIsSubmitting(true);
+        try {
+          await api.post('/characters', {
+            name: importedName,
+            race_id: importedRace.toLowerCase().replace(/ /g, '-'),
+            race_name: importedRace,
+            background_id: lss.info?.background?.value?.toLowerCase() || 'bg-1',
+            background_name: lss.info?.background?.value || 'Unknown',
+            alignment: lss.info?.alignment?.value || 'true neutral',
+            classes: [{ class_id: importedClass.toLowerCase().replace(/ /g, '-'), class_name: importedClass, level: importedLevel }],
+            total_level: importedLevel,
+            ability_scores: { 
+              str: lss.stats?.str?.score || 10, 
+              dex: lss.stats?.dex?.score || 10, 
+              con: lss.stats?.con?.score || 10, 
+              int: lss.stats?.int?.score || 10, 
+              wis: lss.stats?.wis?.score || 10, 
+              cha: lss.stats?.cha?.score || 10 
+            },
+            max_hit_points: lss.vitality?.['hp-max']?.value || (10 * importedLevel),
+            current_hit_points: lss.vitality?.['hp-current']?.value || (10 * importedLevel),
+            hit_dice_total: `${importedLevel}d8`,
+            armor_class: lss.vitality?.ac?.value || 10,
+            proficiency_bonus: lss.proficiency || Math.floor(2 + (importedLevel - 1) / 4)
+          });
+          toast({ type: 'success', message: 'Character imported successfully!', duration: 3000 });
+          navigate('/characters');
+        } catch (err) {
+          console.error("LSS Save Error:", err);
+          toast({ type: 'error', message: 'Failed to save imported character to database.', duration: 5000 });
+        } finally {
+          setIsSubmitting(false);
         }
       } catch (err) {
         console.error("LSS Parse Error:", err);
-        alert("Failed to parse JSON file. Ensure it's a valid Long Story Short v2 export.");
+        toast({ type: 'error', message: "Failed to parse JSON file. Ensure it's a valid Long Story Short v2 export.", duration: 5000 });
       }
       if (fileInputRef.current) fileInputRef.current.value = '';
     };
@@ -132,7 +160,7 @@ export function CharacterBuilderPage() {
       }
     } catch (err) {
       console.error(err);
-      alert('Failed to save character.');
+      toast({ type: 'error', message: 'Failed to save character.', duration: 5000 });
     } finally {
       setIsSubmitting(false);
     }

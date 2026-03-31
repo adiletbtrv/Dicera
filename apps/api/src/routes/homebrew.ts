@@ -28,18 +28,10 @@ const FilterSchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
 
-// Auto-migrate liked_by column safely if it's missing
-async function ensureLikedByColumn() {
-  try {
-    await query("ALTER TABLE homebrew ADD COLUMN IF NOT EXISTS liked_by UUID[] DEFAULT '{}'");
-  } catch (e) {
-    // ignore
-  }
-}
+
 
 router.get('/', optionalAuth, async (req, res, next) => {
   try {
-    await ensureLikedByColumn();
     const filters = FilterSchema.parse(req.query);
     const conditions: string[] = [];
     const params: unknown[] = [];
@@ -96,7 +88,6 @@ router.get('/', optionalAuth, async (req, res, next) => {
 
 router.get('/:id', optionalAuth, async (req, res, next) => {
   try {
-    await ensureLikedByColumn();
     const hb = await queryOne(
       `SELECT * FROM homebrew WHERE id = $1 AND (is_public = true OR creator_id = $2)`,
       [req.params['id'], req.user?.id ?? '00000000-0000-0000-0000-000000000000'],
@@ -178,7 +169,6 @@ router.delete('/:id', requireAuth, async (req, res, next) => {
 
 router.post('/:id/like', requireAuth, async (req, res, next) => {
   try {
-    await ensureLikedByColumn();
     const hb = await queryOne('SELECT liked_by FROM homebrew WHERE id = $1', [req.params['id']]);
     if (!hb) throw new ApiError(404, 'Homebrew not found');
 

@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs';
+import { readFileSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import 'dotenv/config';
@@ -7,77 +7,55 @@ import { pool } from './client.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function migrate() {
-  console.info('Running database migration...');
-  const schemaPath = join(__dirname, 'schema.sql');
-  const sql = readFileSync(schemaPath, 'utf-8');
-
+  console.info('Starting robust database migration...');
   const client = await pool.connect();
+  
   try {
-    const statements = splitStatements(sql);
-    console.info(`Found ${statements.length} statements to execute.`);
-    let success = 0;
-    let skipped = 0;
+    // 1. Create migrations tracking table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS schema_migrations (
+        version TEXT PRIMARY KEY,
+        applied_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
 
-    for (const stmt of statements) {
-      const trimmed = stmt.trim();
-      if (!trimmed || trimmed.startsWith('--')) continue;
-      try {
-        await client.query(trimmed);
-        success++;
-      } catch (err: any) {
-        const msg = err?.message ?? '';
-        if (
-          msg.includes('already exists') ||
-          msg.includes('duplicate') ||
-          msg.includes('DuplicateObject') ||
-          err?.code === '42710' ||
-          err?.code === '42P07' ||
-          err?.code === '42701'
-        ) {
-          skipped++;
-        } else {
-          console.warn(`  ⚠️  Statement failed (skipping):`, msg.slice(0, 120));
-          console.warn(`      Query: ${trimmed.slice(0, 100)}...`);
-          skipped++;
+    // 2. Read applied migrations
+    const { rows } = await client.query('SELECT version FROM schema_migrations ORDER BY version ASC');
+    const applied = new Set(rows.map(r => r.version));
+
+    // 3. Find migration files
+    const migrationsDir = join(__dirname, 'migrations');
+    const files = readdirSync(migrationsDir).filter(f => f.endsWith('.sql')).sort();
+
+    // 4. Execute pending migrations atomically
+    let appliedCount = 0;
+    for (const file of files) {
+      if (!applied.has(file)) {
+        console.info(`Applying migration: ${file}`);
+        const sql = readFileSync(join(migrationsDir, file), 'utf-8');
+        
+        await client.query('BEGIN');
+        try {
+          await client.query(sql);
+          await client.query('INSERT INTO schema_migrations (version) VALUES ($1)', [file]);
+          await client.query('COMMIT');
+          appliedCount++;
+          console.info(`✅ Successfully applied ${file}`);
+        } catch (err) {
+          await client.query('ROLLBACK');
+          console.error(`❌ Migration failed at ${file}:`, err);
+          throw err;
         }
       }
     }
-
-    console.info(`✅ Migration complete. ${success} statements applied, ${skipped} skipped.`);
+    console.info(`✅ Migration complete. ${appliedCount} new migrations applied.`);
   } finally {
     client.release();
     await pool.end();
   }
 }
 
-function splitStatements(sql: string): string[] {
-  const results: string[] = [];
-  let current = '';
-  let inDollarBlock = false;
-
-  const lines = sql.split('\n');
-  for (const line of lines) {
-    const dollarCount = (line.match(/\$\$/g) || []).length;
-    if (dollarCount % 2 === 1) {
-      inDollarBlock = !inDollarBlock;
-    }
-
-    current += line + '\n';
-
-    if (!inDollarBlock && line.trimEnd().endsWith(';')) {
-      results.push(current.trim());
-      current = '';
-    }
-  }
-
-  if (current.trim()) {
-    results.push(current.trim());
-  }
-
-  return results;
-}
-
 migrate().catch((err) => {
-  console.error('Migration failed:', err);
+  console.error('Fatal migration error:', err);
   process.exit(1);
 });

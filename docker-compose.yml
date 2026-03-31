@@ -1,27 +1,22 @@
 version: '3.8'
 
 services:
-  api:
-    build:
-      context: .
-      dockerfile: apps/api/Dockerfile
-    ports:
-      - "3001:3001"
+  postgres:
+    image: postgres:14-alpine
+    container_name: dicera_postgres
     environment:
-      - NODE_ENV=development
-      - DATABASE_URL=${DATABASE_URL}
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
-    restart: unless-stopped
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: dicera
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d dicera"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  web:
-    build:
-      context: .
-      dockerfile: apps/web/Dockerfile
-    ports:
-      - "3000:3000"
-    environment:
-      - VITE_API_URL=http://localhost:3001
-    depends_on:
-      - api
-    restart: unless-stopped
+volumes:
+  postgres_data:

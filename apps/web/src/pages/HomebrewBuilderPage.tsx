@@ -98,7 +98,7 @@ export function HomebrewBuilderPage() {
 
   useEffect(() => {
     if (id) {
-      api.get<any>(`/homebrew/${id}`).then((res) => {
+      api.get<{ name: string; type: string; description: string; is_public: boolean; tags: string[]; content: any }>(`/homebrew/${id}`).then((res) => {
         setName(res.name);
         setType(res.type as HomebrewType);
         setDescription(res.description || '');

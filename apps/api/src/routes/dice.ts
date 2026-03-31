@@ -32,7 +32,7 @@ export function parseSingleExpression(expr: string): RollResult | null {
   const trimmed = expr.trim();
   const match = DICE_REGEX.exec(trimmed);
   if (!match) {
-    const num = parseInt(trimmed);
+    const num = Number(trimmed);
     if (!isNaN(num)) {
       return { expression: trimmed, total: num, rolls: [], modifier: num, breakdown: String(num) };
     }
@@ -97,6 +97,8 @@ export function parseExpression(expr: string): RollResult {
     return parseSingleExpression(cleanExpr) ?? parseComplexExpression(cleanExpr);
   }
 
+  // Reset stateful regex /g flag
+  MULTI_DICE_REGEX.lastIndex = 0;
   if (MULTI_DICE_REGEX.test(cleanExpr)) {
     return parseComplexExpression(cleanExpr);
   }

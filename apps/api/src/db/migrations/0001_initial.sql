@@ -1,4 +1,4 @@
-﻿-- DnD Platform Database Schema
+-- DnD Platform Database Schema
 -- PostgreSQL 15+ with pgvector extension
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

@@ -7,6 +7,7 @@ COPY tsconfig.json ./
 
 # Copy relevant packages
 COPY packages/data ./packages/data
+COPY packages/ai ./packages/ai
 COPY apps/web ./apps/web
 
 RUN npm ci

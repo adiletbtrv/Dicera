@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { createHash } from 'crypto';
+import { scryptSync, randomBytes, timingSafeEqual } from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { query, queryOne } from '../db/client.js';
 import { signToken, requireAuth } from '../middleware/auth.js';
@@ -21,7 +21,22 @@ const LoginSchema = z.object({
 });
 
 function hashPassword(password: string): string {
-  return createHash('sha256').update(password).digest('hex');
+  const salt = randomBytes(16).toString('hex');
+  const dKey = scryptSync(password, salt, 64).toString('hex');
+  return `${salt}:${dKey}`;
+}
+
+function verifyPassword(password: string, hash: string): boolean {
+  try {
+    const parts = hash.split(':');
+    if (parts.length !== 2) return false;
+    const [salt, key] = parts;
+    const existingKeyBuf = Buffer.from(key!, 'hex');
+    const inputKeyBuf = scryptSync(password, salt!, 64);
+    return timingSafeEqual(existingKeyBuf, inputKeyBuf);
+  } catch {
+    return false;
+  }
 }
 
 router.post('/register', async (req, res, next) => {
@@ -60,15 +75,13 @@ router.post('/register', async (req, res, next) => {
 router.post('/login', async (req, res, next) => {
   try {
     const body = LoginSchema.parse(req.body);
-    const passwordHash = hashPassword(body.password);
-
-    interface UserRow { id: string; email: string; username: string; role: string }
+    interface UserRow { id: string; email: string; username: string; role: string; password_hash: string }
     const user = await queryOne<UserRow>(
-      'SELECT id, email, username, role FROM users WHERE email = $1 AND password_hash = $2',
-      [body.email, passwordHash],
+      'SELECT id, email, username, role, password_hash FROM users WHERE email = $1',
+      [body.email],
     );
 
-    if (!user) {
+    if (!user || !verifyPassword(body.password, user.password_hash)) {
       throw new ApiError(401, 'Invalid email or password');
     }
 

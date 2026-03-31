@@ -91,7 +91,9 @@ export function CustomSelect({ options, value, onChange, placeholder = 'Select..
             width: pos.width,
             zIndex: 99999,
             transformOrigin: pos.isUp ? 'bottom' : 'top',
-            background: 'var(--bg3, var(--surface-raised))',
+            background: 'var(--header-bg, var(--surface-raised))',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
             borderColor: 'var(--border-strong)',
             boxShadow: '0 8px 32px rgba(0,0,0,.6), 0 0 20px rgba(139,92,246,.15)',
           }}

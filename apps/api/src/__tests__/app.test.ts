@@ -3,8 +3,8 @@ import request from 'supertest';
 import { app } from '../app.js'; // Assuming app is exported from app.ts
 
 describe('API Health Check', () => {
-  it('should return 200 OK from /api/health', async () => {
-    const response = await request(app).get('/api/health');
+  it('should return 200 OK from /health', async () => {
+    const response = await request(app).get('/health');
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('status', 'ok');
   });

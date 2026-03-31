@@ -96,21 +96,6 @@ export function CharacterBuilderPage() {
     reader.readAsText(file);
   };
 
-  useEffect(() => {
-    if (id) {
-      api.get<{ name: string; race_name: string; classes: { class_name: string; level: number }[] }>(`/characters/${id}`)
-         .then((char) => {
-            const cls = char.classes?.[0];
-            setFormData({
-              name: char.name,
-              race: char.race_name.toLowerCase(),
-              class: cls ? cls.class_name.toLowerCase() : 'fighter',
-              level: cls ? cls.level : 1
-            });
-         })
-         .catch(console.error);
-    }
-  }, [id]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

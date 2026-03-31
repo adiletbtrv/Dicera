@@ -1,3 +1,4 @@
+import { z } from 'zod';
 const BASE_URL = import.meta.env['VITE_API_URL'] ? `${import.meta.env['VITE_API_URL']}/api` : '/api';
 
 class ApiClient {
@@ -61,12 +62,14 @@ class ApiClient {
     return this.request<T>('GET', path, undefined, params);
   }
 
-  post<T>(path: string, body?: unknown) {
-    return this.request<T>('POST', path, body);
+  post<T, Req = unknown>(path: string, body?: Req, schema?: z.ZodType<Req, any, any>) {
+    const parsedBody = body !== undefined && schema ? schema.parse(body) : body;
+    return this.request<T>('POST', path, parsedBody);
   }
 
-  patch<T>(path: string, body?: unknown) {
-    return this.request<T>('PATCH', path, body);
+  patch<T, Req = unknown>(path: string, body?: Req, schema?: z.ZodType<Req, any, any>) {
+    const parsedBody = body !== undefined && schema ? schema.parse(body) : body;
+    return this.request<T>('PATCH', path, parsedBody);
   }
 
   delete<T = void>(path: string) {

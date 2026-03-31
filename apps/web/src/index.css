@@ -142,6 +142,22 @@
     background: var(--accent-muted);
     color: var(--accent);
   }
+
+  /* Premium Scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+  }
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -209,8 +225,8 @@
     @apply relative rounded-[1.25rem] p-5 transition-all duration-300;
     transition-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
     background: var(--surface);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border: 1px solid var(--border-subtle);
     box-shadow: var(--shadow-sm);
     content-visibility: auto;

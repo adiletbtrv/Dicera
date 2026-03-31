@@ -143,10 +143,11 @@ router.patch('/:id', requireAuth, async (req, res, next) => {
     const setClauses: string[] = [];
     const params: unknown[] = [];
     let p = 1;
+    const ALLOWED = new Set(['type', 'name', 'description', 'content', 'tags', 'is_public', 'status', 'version', 'parent_id']);
     const jsonFields = new Set(['content']);
 
     for (const [key, value] of Object.entries(body)) {
-      if (value !== undefined) {
+      if (value !== undefined && ALLOWED.has(key)) {
         setClauses.push(`${key} = $${p}`);
         params.push(jsonFields.has(key) ? JSON.stringify(value) : value);
         p++;

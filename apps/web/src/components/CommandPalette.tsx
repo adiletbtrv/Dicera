@@ -33,36 +33,42 @@ const TYPE_ROUTES: Record<string, string> = {
 
 export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
-  const enabled = isOpen && query.trim().length >= 2;
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query), 250);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  const enabled = isOpen && debouncedQuery.trim().length >= 2;
 
   const { data: spells } = useQuery({
-    queryKey: ['cmd-spells', query],
-    queryFn: () => api.get<{ data: { id: string; name: string; school: string }[] }>('/spells', { q: query, limit: 4 }),
+    queryKey: ['cmd-spells', debouncedQuery],
+    queryFn: () => api.get<{ data: { id: string; name: string; school: string }[] }>('/spells', { q: debouncedQuery, limit: 4 }),
     enabled,
     staleTime: 30_000,
   });
 
   const { data: monsters } = useQuery({
-    queryKey: ['cmd-monsters', query],
-    queryFn: () => api.get<{ data: { id: string; name: string; type: string; challenge_rating: string }[] }>('/monsters', { q: query, limit: 4 }),
+    queryKey: ['cmd-monsters', debouncedQuery],
+    queryFn: () => api.get<{ data: { id: string; name: string; type: string; challenge_rating: string }[] }>('/monsters', { q: debouncedQuery, limit: 4 }),
     enabled,
     staleTime: 30_000,
   });
 
   const { data: items } = useQuery({
-    queryKey: ['cmd-items', query],
-    queryFn: () => api.get<{ data: { id: string; name: string; rarity: string }[] }>('/items', { q: query, limit: 3 }),
+    queryKey: ['cmd-items', debouncedQuery],
+    queryFn: () => api.get<{ data: { id: string; name: string; rarity: string }[] }>('/items', { q: debouncedQuery, limit: 3 }),
     enabled,
     staleTime: 30_000,
   });
 
   const { data: races } = useQuery({
-    queryKey: ['cmd-races', query],
-    queryFn: () => api.get<{ data: { id: string; name: string; size: string }[] }>('/races', { q: query, limit: 3 }),
+    queryKey: ['cmd-races', debouncedQuery],
+    queryFn: () => api.get<{ data: { id: string; name: string; size: string }[] }>('/races', { q: debouncedQuery, limit: 3 }),
     enabled,
     staleTime: 30_000,
   });
@@ -108,11 +114,12 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     <AnimatePresence>
       {isOpen && (
         <motion.div
+          key="cmd-palette-backdrop"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[9998] flex items-start justify-center pt-[15vh] px-4"
-          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', transform: 'translateZ(0)', willChange: 'opacity, backdrop-filter' }}
           onClick={onClose}
         >
           <motion.div

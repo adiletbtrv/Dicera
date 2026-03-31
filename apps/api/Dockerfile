@@ -7,6 +7,7 @@ COPY tsconfig.json ./
 
 # Copy the specific workspaces
 COPY packages/data ./packages/data
+COPY packages/ai ./packages/ai
 COPY apps/api ./apps/api
 
 # Install dependencies using npm workspaces
@@ -23,6 +24,7 @@ COPY package.json package-lock.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/apps/api/package.json ./apps/api/
 COPY --from=builder /app/packages/data/package.json ./packages/data/
+COPY --from=builder /app/packages/ai/package.json ./packages/ai/
 
 # Copy built code
 COPY --from=builder /app/apps/api/dist ./apps/api/dist

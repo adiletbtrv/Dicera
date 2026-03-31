@@ -18,9 +18,10 @@ export function MapDetailPage() {
   const imgRef = useRef<HTMLImageElement | null>(null);
 
   const [scale, setScale] = useState(1);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const offsetRef = useRef({ x: 0, y: 0 });
+  const mapContentRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const dragStartRef = useRef({ x: 0, y: 0 });
 
   const [pins, setPins] = useState<Pin[]>([]);
   const [pinMode, setPinMode] = useState(false);
@@ -53,12 +54,22 @@ export function MapDetailPage() {
   function handleMouseDown(e: React.MouseEvent) {
     if (pinMode || editingPin) return;
     setIsDragging(true);
-    setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
+    dragStartRef.current = { x: e.clientX - offsetRef.current.x, y: e.clientY - offsetRef.current.y };
   }
 
   function handleMouseMove(e: React.MouseEvent) {
     if (!isDragging) return;
-    setOffset({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
+    const newX = e.clientX - dragStartRef.current.x;
+    const newY = e.clientY - dragStartRef.current.y;
+    offsetRef.current = { x: newX, y: newY };
+    
+    if (mapContentRef.current) {
+      requestAnimationFrame(() => {
+        if (mapContentRef.current) {
+          mapContentRef.current.style.transform = `translate(${newX}px, ${newY}px) scale(${scale})`;
+        }
+      });
+    }
   }
 
   function handleMouseUp() { setIsDragging(false); }
@@ -71,8 +82,8 @@ export function MapDetailPage() {
 
     const clickX = e.clientX - rect.left;
     const clickY = e.clientY - rect.top;
-    const imgX = (clickX - offset.x) / scale;
-    const imgY = (clickY - offset.y) / scale;
+    const imgX = (clickX - offsetRef.current.x) / scale;
+    const imgY = (clickY - offsetRef.current.y) / scale;
 
     const img = imgRef.current;
     if (!img || !imgLoaded) return;
@@ -121,7 +132,7 @@ export function MapDetailPage() {
         <div className="flex items-center gap-2">
           <button onClick={() => handleZoom(0.25)} className="btn-secondary p-2"><ZoomIn className="w-4 h-4" /></button>
           <button onClick={() => handleZoom(-0.25)} className="btn-secondary p-2"><ZoomOut className="w-4 h-4" /></button>
-          <button onClick={() => { setScale(1); setOffset({ x: 0, y: 0 }); }} className="btn-secondary p-2"><RotateCcw className="w-4 h-4" /></button>
+          <button onClick={() => { setScale(1); offsetRef.current = {x: 0, y: 0}; if (mapContentRef.current) { mapContentRef.current.style.transform = `translate(0px, 0px) scale(1)`; } }} className="btn-secondary p-2"><RotateCcw className="w-4 h-4" /></button>
 
           <div className="h-6 w-px bg-white/10 mx-1" />
 
@@ -162,32 +173,40 @@ export function MapDetailPage() {
           <div className="absolute inset-0 flex items-center justify-center text-white/30 font-ui font-medium">Loading map...</div>
         ) : (
           <div
-            className="absolute"
+            ref={mapContentRef}
+            className="absolute origin-top-left"
             style={{
-              left: offset.x, top: offset.y, transformOrigin: '0 0', transform: `scale(${scale})`,
-              width: imgRef.current?.naturalWidth, height: imgRef.current?.naturalHeight,
-              backgroundImage: `url(${data.image_url})`, backgroundSize: '100% 100%', backgroundRepeat: 'no-repeat'
+              transform: `translate(${offsetRef.current.x}px, ${offsetRef.current.y}px) scale(${scale})`,
             }}
-          />
+          >
+            <div
+              style={{
+                width: imgRef.current?.naturalWidth, height: imgRef.current?.naturalHeight,
+                backgroundImage: `url(${data.image_url})`, backgroundSize: '100% 100%', backgroundRepeat: 'no-repeat'
+              }}
+            />
+            {imgLoaded && imgRef.current && pins.map(pin => {
+              const px = pin.x * imgRef.current!.naturalWidth;
+              const py = pin.y * imgRef.current!.naturalHeight;
+              return (
+                <div key={pin.id} className="absolute z-10 transition-transform hover:scale-110" style={{ left: px, top: py, transform: `translate(-50%, -100%) scale(${1 / scale})`, transformOrigin: 'bottom center' }}>
+                  <div className="relative group cursor-pointer filter drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]" onClick={(e) => { e.stopPropagation(); setEditingPin(pin); setPinMode(false); }}>
+                    <MapPin style={{ color: pin.color, fill: pin.color, width: pin.size, height: pin.size }} />
+                    {pin.label && <span className="absolute top-full left-1/2 -translate-x-1/2 mt-0.5 text-xs font-bold text-white drop-shadow-[0_2px_2px_rgba(0,0,0,1)] whitespace-nowrap pointer-events-none">{pin.label}</span>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
-
-        {imgLoaded && imgRef.current && pins.map(pin => {
-          const px = offset.x + pin.x * imgRef.current!.naturalWidth * scale;
-          const py = offset.y + pin.y * imgRef.current!.naturalHeight * scale;
-          return (
-            <div key={pin.id} className="absolute z-10 transition-transform hover:scale-110" style={{ left: px, top: py, transform: 'translate(-50%, -100%)' }}>
-              <div className="relative group cursor-pointer filter drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]" onClick={(e) => { e.stopPropagation(); setEditingPin(pin); setPinMode(false); }}>
-                <MapPin style={{ color: pin.color, fill: pin.color, width: pin.size, height: pin.size }} />
-                {pin.label && <span className="absolute top-full left-1/2 -translate-x-1/2 mt-0.5 text-xs font-bold text-white drop-shadow-[0_2px_2px_rgba(0,0,0,1)] whitespace-nowrap pointer-events-none">{pin.label}</span>}
-              </div>
-            </div>
-          );
-        })}
       </div>
 
       <AnimatePresence>
         {editingPin && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setEditingPin(null)}>
+          <motion.div 
+            key="pin-modal-backdrop" 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm transform-gpu" style={{ willChange: 'opacity' }} onClick={() => setEditingPin(null)}>
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -213,7 +232,7 @@ export function MapDetailPage() {
                     )}
                   </div>
                 </div>
-                <div>
+                <div className="flex-none w-32">
                   <label className="label text-sm">Size</label>
                   <CustomSelect
                     value={String(editingPin.size)}
@@ -227,7 +246,7 @@ export function MapDetailPage() {
                 <button onClick={saveEditedPin} className="btn-primary px-4 flex items-center gap-2"><Check className="w-4 h-4" /> Save</button>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

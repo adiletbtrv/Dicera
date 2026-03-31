@@ -137,9 +137,10 @@ router.patch('/:id', requireAuth, async (req, res, next) => {
     let p = 1;
 
     const jsonFields = new Set(['classes', 'ability_scores']);
+    const ALLOWED = new Set(['name', 'race_id', 'race_name', 'class_id', 'class_name', 'background_id', 'background_name', 'alignment', 'total_level', 'ability_scores', 'max_hit_points', 'current_hit_points', 'temporary_hit_points', 'hit_dice_total', 'armor_class', 'proficiency_bonus', 'speed', 'spells_known', 'spells_prepared', 'equipment', 'proficiencies', 'languages', 'features', 'classes', 'spell_slots', 'notes']);
 
     for (const [key, value] of Object.entries(updates)) {
-      if (value !== undefined) {
+      if (value !== undefined && ALLOWED.has(key)) {
         setClauses.push(`${key} = $${p}`);
         params.push(jsonFields.has(key) ? JSON.stringify(value) : value);
         p++;

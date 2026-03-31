@@ -2,13 +2,14 @@
   "name": "dnd-platform",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "npm@10.9.3",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev -w apps/web\" \"npm run dev -w apps/api\"",
-    "build": "npm run build -w packages/data && npm run build -w packages/ai && npm run build -w apps/api && npm run build -w apps/web",
+    "dev": "turbo run dev",
+    "build": "turbo run build",
     "lint": "eslint . --ext .ts,.tsx,.js",
     "typecheck": "tsc --build",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
@@ -22,6 +23,7 @@
     "eslint": "^9.0.0",
     "eslint-config-prettier": "^10.0.0",
     "prettier": "^3.3.3",
+    "turbo": "^2.9.1",
     "typescript": "^5.5.4",
     "vitest": "^2.0.0"
   },

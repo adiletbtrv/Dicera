@@ -8,12 +8,24 @@
     "declarationMap": true,
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "lib": ["ES2022"]
+    "lib": [
+      "ES2022"
+    ],
+    "noEmit": false
   },
   "references": [
-    { "path": "../../packages/data" },
-    { "path": "../../packages/ai" }
+    {
+      "path": "../../packages/data"
+    },
+    {
+      "path": "../../packages/ai"
+    }
   ],
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://img.shields.io/badge/version-1.0.0-6366f1?style=flat-square" alt="version" />
+<img src="https://img.shields.io/badge/version-1.1.0-6366f1?style=flat-square" alt="version" />
 <img src="https://img.shields.io/badge/license-OGL_5.1-a78bfa?style=flat-square" alt="license" />
 <img src="https://img.shields.io/badge/stack-React_·_Node.js_·_PostgreSQL-818cf8?style=flat-square" alt="stack" />
 <img src="https://img.shields.io/badge/design-glassmorphism-c4b5fd?style=flat-square" alt="design" />

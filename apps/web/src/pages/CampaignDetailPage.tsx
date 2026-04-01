@@ -78,14 +78,14 @@ export function CampaignDetailPage() {
     onError: () => toast({ type: 'error', message: 'Failed to save notes. Run DB migrations.', duration: 5000 }),
   });
 
+  const npcs = data?.npcs ?? [];
+  const sessions = data?.sessions ?? [];
+  const reversedSessions = useMemo(() => [...sessions].reverse(), [sessions]);
+
   if (isLoading || !data) {
     if (isError) throw new Error('Campaign not found or failed to load.');
     return <div className="py-12"><DetailSkeleton /></div>;
   }
-
-  const npcs = data.npcs ?? [];
-  const sessions = data.sessions ?? [];
-  const reversedSessions = useMemo(() => [...sessions].reverse(), [sessions]);
 
   const handleSaveSession = () => {
     const nextSessionNumber = sessions.length > 0 ? Math.max(...sessions.map(s => s.session_number || 0)) + 1 : 1;

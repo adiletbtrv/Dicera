@@ -57,6 +57,8 @@ Connects to advanced AI platforms for **rules lookup**, **edge-case arbitration*
 ### Apple-Tier Design Language
 Built with a custom **deep-surface glassmorphism** aesthetic, `Outfit` + `Inter` typography pairing, and fluid Framer Motion transitions throughout.
 
+> **[View Figma Design File →](https://www.figma.com/design/ALbnn6TYHSK10G72izKeuf/Dicera?node-id=0-1&t=hlF8ueszoQZXFoRk-1)**
+
 ---
 
 ## Technology Stack

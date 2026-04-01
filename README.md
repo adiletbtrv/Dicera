@@ -21,15 +21,15 @@ Dicera delivers every mathematical, archival, and DM-assistant tool required for
 
 <div align="center">
 
-| Compendium | Character Builder |
+| Home Page | Profile Page |
 |:---:|:---:|
 | ![Compendium](https://github.com/user-attachments/assets/fd12aa3e-7ef9-483b-8bc0-e9719948b38d) | ![Character Builder](https://github.com/user-attachments/assets/483897d6-421a-4c73-9b59-0b390b659da3) |
 
-| Encounter Runner | Bestiary |
+| Compendium | Bestiary |
 |:---:|:---:|
 | ![Encounter Runner](https://github.com/user-attachments/assets/03015501-2f23-45ba-9806-869da5242ebc) | ![Bestiary](https://github.com/user-attachments/assets/58198fcb-4582-429e-a701-2b138627d250) |
 
-| Spell Browser | Item Vault |
+| Conditions | Item Vault |
 |:---:|:---:|
 | ![Spell Browser](https://github.com/user-attachments/assets/5bd5a9c8-f0af-43ef-a076-aec70548ae0d) | ![Item Vault](https://github.com/user-attachments/assets/5cd90e77-f68e-4a9e-9b5a-e338c75d56fe) |
 

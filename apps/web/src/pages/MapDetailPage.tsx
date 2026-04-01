@@ -74,6 +74,33 @@ export function MapDetailPage() {
 
   function handleMouseUp() { setIsDragging(false); }
 
+  function handleTouchStart(e: React.TouchEvent) {
+    if (pinMode || editingPin) return;
+    if (e.touches.length !== 1) return;
+    setIsDragging(true);
+    dragStartRef.current = { 
+      x: e.touches[0].clientX - offsetRef.current.x, 
+      y: e.touches[0].clientY - offsetRef.current.y 
+    };
+  }
+
+  function handleTouchMove(e: React.TouchEvent) {
+    if (!isDragging || e.touches.length !== 1) return;
+    const newX = e.touches[0].clientX - dragStartRef.current.x;
+    const newY = e.touches[0].clientY - dragStartRef.current.y;
+    offsetRef.current = { x: newX, y: newY };
+    
+    if (mapContentRef.current) {
+      requestAnimationFrame(() => {
+        if (mapContentRef.current) {
+          mapContentRef.current.style.transform = `translate(${newX}px, ${newY}px) scale(${scale})`;
+        }
+      });
+    }
+  }
+
+  function handleTouchEnd() { setIsDragging(false); }
+
   function handleContainerClick(e: React.MouseEvent) {
     if (!pinMode) return;
     const container = containerRef.current;
@@ -159,11 +186,15 @@ export function MapDetailPage() {
       <div
         ref={containerRef}
         className="flex-1 rounded-2xl overflow-hidden relative"
-        style={{ border: '1px solid var(--border)', background: 'var(--surface)', cursor: pinMode ? 'crosshair' : isDragging ? 'grabbing' : 'grab', minHeight: '400px' }}
+        style={{ border: '1px solid var(--border)', background: 'var(--surface)', cursor: pinMode ? 'crosshair' : isDragging ? 'grabbing' : 'grab', minHeight: '400px', touchAction: 'none' }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
         onClick={handleContainerClick}
         onWheel={handleWheel}
       >

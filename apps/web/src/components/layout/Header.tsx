@@ -38,7 +38,7 @@ export function Header({ onMenuClick, onSearchClick }: HeaderProps) {
 
         <button
           onClick={onSearchClick}
-          className="btn-ghost px-3 py-2 rounded-xl hidden md:flex items-center gap-2 text-sm w-full max-w-[400px] justify-between group"
+          className="btn-ghost px-3 py-2 rounded-xl hidden lg:flex items-center gap-2 text-sm w-full max-w-[400px] justify-between group"
           style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
           aria-label="Open search (Cmd+K)"
         >
@@ -51,7 +51,7 @@ export function Header({ onMenuClick, onSearchClick }: HeaderProps) {
           </kbd>
         </button>
 
-        <button onClick={onSearchClick} className="md:hidden btn-ghost p-2 rounded-xl">
+        <button onClick={onSearchClick} className="lg:hidden btn-ghost p-2 rounded-xl">
           <Search className="w-5 h-5" style={{ color: 'var(--text-secondary)' }} />
         </button>
       </div>

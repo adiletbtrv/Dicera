@@ -79,15 +79,15 @@ export function MapDetailPage() {
     if (e.touches.length !== 1) return;
     setIsDragging(true);
     dragStartRef.current = { 
-      x: e.touches[0].clientX - offsetRef.current.x, 
-      y: e.touches[0].clientY - offsetRef.current.y 
+      x: e.touches[0]!.clientX - offsetRef.current.x, 
+      y: e.touches[0]!.clientY - offsetRef.current.y 
     };
   }
 
   function handleTouchMove(e: React.TouchEvent) {
     if (!isDragging || e.touches.length !== 1) return;
-    const newX = e.touches[0].clientX - dragStartRef.current.x;
-    const newY = e.touches[0].clientY - dragStartRef.current.y;
+    const newX = e.touches[0]!.clientX - dragStartRef.current.x;
+    const newY = e.touches[0]!.clientY - dragStartRef.current.y;
     offsetRef.current = { x: newX, y: newY };
     
     if (mapContentRef.current) {

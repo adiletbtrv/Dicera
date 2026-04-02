@@ -6,13 +6,14 @@ import { ChevronLeft, Users, Map, Scroll, Plus, Trash2, Edit2, Check, X } from '
 import { motion, AnimatePresence } from 'framer-motion';
 import { abilityModifier, formatModifier, capitalize } from '@/lib/utils.js';
 import { useToastStore } from '@/store/toast';
+import { useAuthStore } from '@/store/auth';
 import { DetailSkeleton } from '@/components/SkeletonLoader';
 
 interface NPC { id: string; name: string; role: string; description?: string }
 interface Session { id: string; title: string; session_number: number; date: string; summary: string }
 interface Campaign {
   id: string; name: string; description?: string; setting?: string; status: string;
-  dm_notes?: string; npcs?: NPC[]; sessions?: Session[];
+  dm_notes?: string; npcs?: NPC[]; sessions?: Session[]; owner_id?: string;
 }
 
 type Tab = 'Overview' | 'NPCs' | 'Sessions' | 'DM Notes';
@@ -23,6 +24,7 @@ export function CampaignDetailPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const toast = useToastStore((s) => s.add);
+  const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<Tab>('Overview');
 
   const [addingNpc, setAddingNpc] = useState(false);
@@ -33,6 +35,9 @@ export function CampaignDetailPage() {
 
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesDraft, setNotesDraft] = useState('');
+
+  const [inviting, setInviting] = useState(false);
+  const [inviteUsername, setInviteUsername] = useState('');
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['campaign', id],
@@ -75,7 +80,17 @@ export function CampaignDetailPage() {
       setEditingNotes(false);
       toast({ type: 'success', message: 'Notes saved', duration: 2000 });
     },
-    onError: () => toast({ type: 'error', message: 'Failed to save notes. Run DB migrations.', duration: 5000 }),
+    onError: () => toast({ type: 'error', message: 'Failed to save notes', duration: 5000 }),
+  });
+
+  const inviteMut = useMutation({
+    mutationFn: (username: string) => api.post(`/campaigns/${id}/invite`, { username }),
+    onSuccess: () => {
+      setInviting(false);
+      setInviteUsername('');
+      toast({ type: 'success', message: 'Player invited to campaign', duration: 3000 });
+    },
+    onError: () => toast({ type: 'error', message: 'Failed to invite player. User not found?', duration: 3000 }),
   });
 
   const npcs = data?.npcs ?? [];
@@ -91,6 +106,8 @@ export function CampaignDetailPage() {
     const nextSessionNumber = sessions.length > 0 ? Math.max(...sessions.map(s => s.session_number || 0)) + 1 : 1;
     addSessionMut.mutate({ ...sessionForm, session_number: nextSessionNumber });
   };
+
+  const isOwner = user?.id === data.owner_id;
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -111,9 +128,16 @@ export function CampaignDetailPage() {
               </span>
             </div>
           </div>
-          <button onClick={() => navigate(`/campaigns/${id}/edit`)} className="btn-secondary flex items-center gap-2">
-            <Edit2 className="w-4 h-4" /> Edit
-          </button>
+          {isOwner && (
+            <div className="flex gap-2">
+              <button onClick={() => setInviting(true)} className="btn-primary flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600">
+                <Users className="w-4 h-4" /> Invite Player
+              </button>
+              <button onClick={() => navigate(`/campaigns/${id}/edit`)} className="btn-secondary flex items-center gap-2">
+                <Edit2 className="w-4 h-4" /> Edit
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -157,11 +181,13 @@ export function CampaignDetailPage() {
 
           {activeTab === 'NPCs' && (
             <div className="space-y-3">
-              <div className="flex justify-end">
-                <button onClick={() => setAddingNpc(true)} className="btn-primary flex items-center gap-1.5 text-sm">
-                  <Plus className="w-4 h-4" /> Add NPC
-                </button>
-              </div>
+              {isOwner && (
+                <div className="flex justify-end">
+                  <button onClick={() => setAddingNpc(true)} className="btn-primary flex items-center gap-1.5 text-sm">
+                    <Plus className="w-4 h-4" /> Add NPC
+                  </button>
+                </div>
+              )}
               <AnimatePresence>
                 {addingNpc && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="card space-y-3">
@@ -192,7 +218,9 @@ export function CampaignDetailPage() {
                         {npc.role && <p className="text-xs font-ui mb-1" style={{ color: 'var(--accent)' }}>{npc.role}</p>}
                         {npc.description && <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{npc.description}</p>}
                       </div>
-                      <button onClick={() => deleteNpcMut.mutate(npc.id)} className="btn-ghost p-1.5 rounded-lg text-red-400 flex-shrink-0"><Trash2 className="w-3.5 h-3.5" /></button>
+                      {isOwner && (
+                        <button onClick={() => deleteNpcMut.mutate(npc.id)} className="btn-ghost p-1.5 rounded-lg text-red-400 flex-shrink-0"><Trash2 className="w-3.5 h-3.5" /></button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -202,11 +230,13 @@ export function CampaignDetailPage() {
 
           {activeTab === 'Sessions' && (
             <div className="space-y-3">
-              <div className="flex justify-end">
-                <button onClick={() => setAddingSession(true)} className="btn-primary flex items-center gap-1.5 text-sm">
-                  <Plus className="w-4 h-4" /> Log Session
-                </button>
-              </div>
+              {isOwner && (
+                <div className="flex justify-end">
+                  <button onClick={() => setAddingSession(true)} className="btn-primary flex items-center gap-1.5 text-sm">
+                    <Plus className="w-4 h-4" /> Log Session
+                  </button>
+                </div>
+              )}
               <AnimatePresence>
                 {addingSession && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="card space-y-3">
@@ -271,6 +301,43 @@ export function CampaignDetailPage() {
             </div>
           )}
         </motion.div>
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {inviting && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            onClick={() => setInviting(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+              className="card shadow-2xl space-y-4 min-w-[320px] max-w-sm"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="font-heading font-bold text-lg">Invite Player</h3>
+                <button onClick={() => setInviting(false)} className="btn-ghost p-1"><X className="w-5 h-5" /></button>
+              </div>
+              <p className="text-sm text-gray-400">Enter the exact username of the player you want to invite.</p>
+              <input
+                autoFocus
+                className="input w-full"
+                placeholder="Username..."
+                value={inviteUsername}
+                onChange={e => setInviteUsername(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && inviteUsername && inviteMut.mutate(inviteUsername)}
+              />
+              <button
+                onClick={() => inviteMut.mutate(inviteUsername)}
+                disabled={!inviteUsername || inviteMut.isPending}
+                className="btn-primary w-full flex items-center justify-center gap-2"
+              >
+                {inviteMut.isPending ? 'Inviting...' : 'Send Invite'}
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );

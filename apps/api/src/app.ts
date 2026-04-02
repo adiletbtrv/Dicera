@@ -22,6 +22,8 @@ import { backgroundsRouter } from './routes/backgrounds.js';
 import { featsRouter } from './routes/feats.js';
 import { conditionsRouter } from './routes/conditions.js';
 import { itemsRouter } from './routes/items.js';
+import { adminRouter } from './routes/admin.js';
+import { notificationsRouter } from './routes/notifications.js';
 import { errorHandler, notFound } from './middleware/error-handler.js';
 
 export const app = express();
@@ -64,6 +66,8 @@ app.use('/api/backgrounds', backgroundsRouter);
 app.use('/api/feats', featsRouter);
 app.use('/api/conditions', conditionsRouter);
 app.use('/api/items', itemsRouter);
+app.use('/api/admin', adminRouter);
+app.use('/api/notifications', notificationsRouter);
 
 app.use(notFound);
 app.use(errorHandler);

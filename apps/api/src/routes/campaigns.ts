@@ -54,7 +54,8 @@ router.get('/', requireAuth, async (req, res, next) => {
     const rows = await query(
       `SELECT id, name, description, setting, system, status, is_public,
               image_url, created_at, updated_at
-       FROM campaigns WHERE owner_id = $1 ORDER BY updated_at DESC`,
+       FROM campaigns WHERE owner_id = $1 OR id IN (SELECT campaign_id FROM campaign_members WHERE user_id = $1)
+       ORDER BY updated_at DESC`,
       [req.user!.id],
     );
     res.json(rows.rows);
@@ -66,7 +67,7 @@ router.get('/', requireAuth, async (req, res, next) => {
 router.get('/:id', requireAuth, async (req, res, next) => {
   try {
     const campaign = await queryOne(
-      'SELECT * FROM campaigns WHERE id = $1 AND (owner_id = $2 OR is_public = true)',
+      'SELECT * FROM campaigns WHERE id = $1 AND (owner_id = $2 OR is_public = true OR id IN (SELECT campaign_id FROM campaign_members WHERE user_id = $2))',
       [req.params['id'], req.user!.id],
     );
     if (!campaign) throw new ApiError(404, 'Campaign not found');
@@ -99,6 +100,42 @@ router.post('/', requireAuth, async (req, res, next) => {
     );
 
     res.status(201).json({ id });
+  } catch (err) {
+    next(err);
+  }
+});
+
+const InviteSchema = z.object({
+  username: z.string().min(1),
+});
+
+router.post('/:id/invite', requireAuth, async (req, res, next) => {
+  try {
+    await assertCampaignOwner(req.params['id']!, req.user!.id);
+    const body = InviteSchema.parse(req.body);
+
+    const targetUser = await queryOne('SELECT id, username FROM users WHERE username = $1', [body.username]);
+    if (!targetUser) throw new ApiError(404, 'User not found');
+
+    const campaign = await queryOne('SELECT name FROM campaigns WHERE id = $1', [req.params['id']]);
+
+    await query(
+      `INSERT INTO campaign_members (campaign_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      [req.params['id'], targetUser.id]
+    );
+
+    await query(
+      `INSERT INTO notifications (user_id, title, message, type, link) VALUES ($1, $2, $3, $4, $5)`,
+      [
+        targetUser.id,
+        'Campaign Invitation',
+        `${req.user!.username} invited you to join the campaign "${campaign!.name}"!`,
+        'invite',
+        `/campaigns/${req.params['id']}`
+      ]
+    );
+
+    res.json({ success: true, message: 'User invited successfully' });
   } catch (err) {
     next(err);
   }

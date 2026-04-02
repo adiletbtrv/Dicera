@@ -5,8 +5,9 @@ import { api } from '@/lib/api';
 import { ChevronLeft, ZoomIn, ZoomOut, RotateCcw, Download, MapPin, Trash2, Edit2, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CustomSelect } from '@/components/ui/CustomSelect.js';
+import { useAuthStore } from '@/store/auth';
 
-interface MapData { id: string; name: string; description?: string; image_url?: string; tags?: string[]; width?: number; height?: number; }
+interface MapData { id: string; name: string; description?: string; image_url?: string; tags?: string[]; width?: number; height?: number; creator_id?: string; }
 type Pin = { id: string; x: number; y: number; label: string; color: string; size: number };
 const PIN_COLORS = ['#ef4444', '#22c55e', '#3b82f6', '#f59e0b', '#a855f7'];
 const PIN_SIZES = [16, 24, 32, 48];
@@ -16,6 +17,7 @@ export function MapDetailPage() {
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
+  const { user } = useAuthStore();
 
   const [scale, setScale] = useState(1);
   const offsetRef = useRef({ x: 0, y: 0 });
@@ -149,6 +151,8 @@ export function MapDetailPage() {
   if (isLoading) return <div className="text-center py-12" style={{ color: 'var(--text-muted)' }}>Loading map...</div>;
   if (!data) return <div className="text-center py-12" style={{ color: 'var(--dragon)' }}>Map not found.</div>;
 
+  const isOwner = user?.id === data.creator_id;
+
   return (
     <div className="max-w-6xl mx-auto flex flex-col gap-4" style={{ height: 'calc(100vh - 12rem)' }}>
       <div className="flex flex-wrap items-center gap-3 flex-shrink-0">
@@ -163,22 +167,26 @@ export function MapDetailPage() {
 
           <div className="h-6 w-px bg-white/10 mx-1" />
 
-          <div className="flex gap-1 bg-white/5 rounded-full p-1 border border-white/10">
-            {PIN_COLORS.map((c) => (
-              <button key={c} onClick={() => { setPinForm({ ...pinForm, color: c }); setPinMode(true); setEditingPin(null); }} className="w-6 h-6 rounded-full border-2" style={{ background: c, borderColor: pinForm.color === c && pinMode ? 'white' : 'transparent' }} />
-            ))}
-          </div>
-          {pinMode && (
-            <div className="flex items-center gap-2">
-              <input className="input px-2 py-1 text-sm w-32" placeholder="Pin label..." value={pinForm.label} onChange={(e) => setPinForm({ ...pinForm, label: e.target.value })} autoFocus />
-              <div className="w-24">
-                <CustomSelect
-                  value={String(pinForm.size)}
-                  onChange={(val) => setPinForm({ ...pinForm, size: Number(val) })}
-                  options={PIN_SIZES.map(s => ({ value: String(s), label: `${s}px` }))}
-                />
+          {isOwner && (
+            <>
+              <div className="flex gap-1 bg-white/5 rounded-full p-1 border border-white/10">
+                {PIN_COLORS.map((c) => (
+                  <button key={c} onClick={() => { setPinForm({ ...pinForm, color: c }); setPinMode(true); setEditingPin(null); }} className="w-6 h-6 rounded-full border-2" style={{ background: c, borderColor: pinForm.color === c && pinMode ? 'white' : 'transparent' }} />
+                ))}
               </div>
-            </div>
+              {pinMode && (
+                <div className="flex items-center gap-2">
+                  <input className="input px-2 py-1 text-sm w-32" placeholder="Pin label..." value={pinForm.label} onChange={(e) => setPinForm({ ...pinForm, label: e.target.value })} autoFocus />
+                  <div className="w-24">
+                    <CustomSelect
+                      value={String(pinForm.size)}
+                      onChange={(val) => setPinForm({ ...pinForm, size: Number(val) })}
+                      options={PIN_SIZES.map(s => ({ value: String(s), label: `${s}px` }))}
+                    />
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -221,7 +229,7 @@ export function MapDetailPage() {
               const py = pin.y * imgRef.current!.naturalHeight;
               return (
                 <div key={pin.id} className="absolute z-10 transition-transform hover:scale-110" style={{ left: px, top: py, transform: `translate(-50%, -100%) scale(${1 / scale})`, transformOrigin: 'bottom center' }}>
-                  <div className="relative group cursor-pointer filter drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]" onClick={(e) => { e.stopPropagation(); setEditingPin(pin); setPinMode(false); }}>
+                  <div className={`relative group filter drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] ${isOwner ? 'cursor-pointer' : ''}`} onClick={(e) => { if (!isOwner) return; e.stopPropagation(); setEditingPin(pin); setPinMode(false); }}>
                     <MapPin style={{ color: pin.color, fill: pin.color, width: pin.size, height: pin.size }} />
                     {pin.label && <span className="absolute top-full left-1/2 -translate-x-1/2 mt-0.5 text-xs font-bold text-white drop-shadow-[0_2px_2px_rgba(0,0,0,1)] whitespace-nowrap pointer-events-none">{pin.label}</span>}
                   </div>

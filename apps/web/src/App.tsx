@@ -28,6 +28,7 @@ const LoginPage = lazy(() => import('@/pages/LoginPage').then((m) => ({ default:
 const RegisterPage = lazy(() => import('@/pages/RegisterPage').then((m) => ({ default: m.RegisterPage })));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage').then((m) => ({ default: m.ProfilePage })));
+const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage })));
 
 const RacesPage = lazy(() => import('@/pages/RacesPage').then((m) => ({ default: m.RacesPage })));
 const RaceDetailPage = lazy(() => import('@/pages/RaceDetailPage').then((m) => ({ default: m.RaceDetailPage })));
@@ -58,6 +59,26 @@ export function PageLoader() {
 export default function App() {
   const { user } = useAuthStore();
 
+  const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+    const { user, isLoading } = useAuthStore();
+    const token = localStorage.getItem('auth_token');
+    const isActuallyLoading = isLoading || (!user && token);
+    
+    if (isActuallyLoading) return <PageLoader />;
+    if (!user) return <Navigate to="/login" />;
+    return <>{children}</>;
+  };
+
+  const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+    const { user, isLoading } = useAuthStore();
+    const token = localStorage.getItem('auth_token');
+    const isActuallyLoading = isLoading || (!user && token);
+    
+    if (isActuallyLoading) return <PageLoader />;
+    if (user?.role !== 'admin') return <Navigate to="/" />;
+    return <>{children}</>;
+  };
+
   return (
     <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>
@@ -67,7 +88,8 @@ export default function App() {
 
           <Route element={<Layout />}>
             <Route path="/" element={<HomePage />} />
-            <Route path="/profile" element={user ? <ProfilePage /> : <Navigate to="/login" />} />
+            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/admin" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
 
             <Route path="/spells" element={<SpellsPage />} />
             <Route path="/spells/:id" element={<SpellDetailPage />} />

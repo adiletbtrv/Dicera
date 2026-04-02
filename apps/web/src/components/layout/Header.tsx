@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
 import { useThemeStore } from '@/store/theme';
 import { Sun, Moon, LogOut, LogIn, UserPlus, Menu, Search } from 'lucide-react';
+import { NotificationsDropdown } from './NotificationsDropdown';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -69,6 +70,7 @@ export function Header({ onMenuClick, onSearchClick }: HeaderProps) {
             <Moon className="w-5 h-5" style={{ color: 'var(--text-secondary)' }} />
           )}
         </button>
+        {user && <NotificationsDropdown />}
 
         <div className="w-px h-6 mx-1 hidden sm:block" style={{ background: 'var(--border)' }} />
 

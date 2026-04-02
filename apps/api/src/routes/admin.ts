@@ -6,7 +6,6 @@ import { ApiError } from '../middleware/error-handler.js';
 
 const router = Router();
 
-// Only 'admin' role can access these routes
 router.use(requireAuth);
 router.use(requireRole('admin'));
 
@@ -91,7 +90,6 @@ router.patch('/users/:id', async (req, res, next) => {
 
 router.delete('/users/:id', async (req, res, next) => {
   try {
-    // Prevent admin from deleting themselves
     if (req.params['id'] === req.user?.id) {
       throw new ApiError(403, 'You cannot delete your own admin account');
     }

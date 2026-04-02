@@ -8,7 +8,7 @@ export interface Notification {
   message: string;
   type: string;
   link?: string;
-  metadata: any;
+  metadata: unknown;
   is_read: boolean;
   created_at: string;
 }
@@ -36,8 +36,7 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
         unreadCount: data.filter((n) => !n.is_read).length,
         isLoading: false,
       });
-    } catch (err) {
-      console.error('Failed to fetch notifications', err);
+    } catch {
       set({ isLoading: false });
     }
   },
@@ -52,8 +51,8 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
         notifications: nextList,
         unreadCount: nextList.filter((n) => !n.is_read).length,
       });
-    } catch (err) {
-      console.error('Failed to mark notification as read', err);
+    } catch {
+      // silent — UI already updated optimistically on click
     }
   },
 
@@ -62,8 +61,8 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
       await api.post('/notifications/read-all', {});
       const nextList = get().notifications.map((n) => ({ ...n, is_read: true }));
       set({ notifications: nextList, unreadCount: 0 });
-    } catch (err) {
-      console.error('Failed to mark all notifications as read', err);
+    } catch {
+      // silent
     }
   },
 }));

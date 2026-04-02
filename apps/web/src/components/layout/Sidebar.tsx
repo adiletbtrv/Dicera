@@ -5,9 +5,10 @@ import { cn } from '@/lib/utils.js';
 import {
   Home, Sword, Scroll, Dice5, Map as MapIcon, Wand2, Bot, Skull, Swords,
   Users, GraduationCap, BookOpen, Shield, Package, Star, BookMarked, Gem,
-  ChevronDown, Wrench, Trophy, User, Pickaxe
+  ChevronDown, Wrench, Trophy, User, Pickaxe, ShieldAlert
 } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo.js';
+import { useAuthStore } from '@/store/auth.js';
 
 interface NavSection {
   label: string;
@@ -132,6 +133,10 @@ function SidebarSection({ section, defaultOpen = true }: { section: NavSection; 
 }
 
 export function Sidebar() {
+  const { user } = useAuthStore();
+  const location = useLocation();
+  const isAdminActive = location.pathname === '/admin';
+
   return (
     <aside
       className="w-64 h-full flex-shrink-0 flex flex-col relative z-20 transition-colors duration-300"
@@ -153,6 +158,33 @@ export function Sidebar() {
         {NAV_SECTIONS.map((section, i) => (
           <SidebarSection key={section.label} section={section} defaultOpen={i < 2} />
         ))}
+
+        {user?.role === 'admin' && (
+          <div className="mt-2 pt-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+            <p className="px-3 py-1.5 text-xs font-ui font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Admin</p>
+            <NavLink
+              to="/admin"
+              end
+              className={cn('relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-ui font-medium transition-all duration-200 z-10')}
+              style={{ color: isAdminActive ? 'var(--accent)' : 'var(--text-secondary)' }}
+            >
+              {isAdminActive && (
+                <motion.div
+                  layoutId="sidebar-active-pill"
+                  className="absolute inset-0 rounded-xl"
+                  style={{ background: 'var(--sidebar-active)' }}
+                  initial={false}
+                  transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                />
+              )}
+              <ShieldAlert
+                className="w-[16px] h-[16px] relative z-10 flex-shrink-0"
+                style={{ color: isAdminActive ? 'var(--accent)' : 'var(--text-muted)' }}
+              />
+              <span className="relative z-10 truncate">Admin Panel</span>
+            </NavLink>
+          </div>
+        )}
       </nav>
 
       <div className="p-4" style={{ borderTop: '1px solid var(--sidebar-border)' }}>

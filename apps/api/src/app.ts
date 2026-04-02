@@ -32,10 +32,7 @@ app.use(helmet());
 app.use(cors({ origin: config.corsOrigin, credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(pinoHttp({ 
-  logger,
-  genReqId: () => crypto.randomUUID()
-}));
+app.use(pinoHttp({ logger, genReqId: () => crypto.randomUUID() }));
 
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

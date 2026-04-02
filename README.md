@@ -158,8 +158,31 @@ dicera/
 
 ---
 
+## API Endpoints
+
+| Method | Endpoint                    | Auth     | Описание                                          |
+| ------ | --------------------------- | -------- | ------------------------------------------------- |
+| POST   | `/api/auth/register`        | —        | Регистрация                                       |
+| POST   | `/api/auth/login`           | —        | Вход                                              |
+| GET    | `/api/auth/me`              | user     | Текущий пользователь                              |
+| GET    | `/api/spells`               | optional | Список заклинаний (фильтры: level, school, class) |
+| GET    | `/api/spells/:id`           | optional | Заклинание по ID                                  |
+| GET    | `/api/monsters`             | optional | Бестиарий (фильтры: CR, type, size)               |
+| GET    | `/api/characters`           | user     | Мои персонажи                                     |
+| POST   | `/api/characters`           | user     | Создать персонажа                                 |
+| PATCH  | `/api/characters/:id`       | user     | Обновить персонажа                                |
+| DELETE | `/api/characters/:id`       | user     | Удалить                                           |
+| GET    | `/api/campaigns`            | user     | Мои кампании                                      |
+| POST   | `/api/campaigns/:id/invite` | user     | Пригласить игрока                                 |
+| POST   | `/api/dice/roll`            | optional | Бросить кубик                                     |
+| POST   | `/api/ai/rules`             | user     | AI: вопрос по правилам                            |
+| GET    | `/api/admin/stats`          | admin    | Статистика платформы                              |
+| PATCH  | `/api/admin/users/:id`      | admin    | Изменить роль                                     |
+
+---
+
 ## License
 
-Source platform code is proprietary — © Dicera Architects.
+Made by Adilet Batyrov.
 
 All D&D 5e game content is covered under the **[Open-Gaming License v1.0a / 5.1](https://www.dndbeyond.com/attachments/39j2li89/SRD5.1-CCBY4.0License.pdf)** by Wizards of the Coast.

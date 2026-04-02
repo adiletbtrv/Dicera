@@ -76,6 +76,16 @@ router.get('/', optionalAuth, async (req, res, next) => {
       params.push(filters.homebrew === 'true');
       p++;
     }
+    if (filters.cr_min) {
+      conditions.push(`cr_numeric >= $${p}`);
+      params.push(crToNumber(filters.cr_min));
+      p++;
+    }
+    if (filters.cr_max) {
+      conditions.push(`cr_numeric <= $${p}`);
+      params.push(crToNumber(filters.cr_max));
+      p++;
+    }
 
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
     const offset = (filters.page - 1) * filters.limit;
@@ -86,18 +96,6 @@ router.get('/', optionalAuth, async (req, res, next) => {
        FROM monsters ${where} ORDER BY name ASC LIMIT $${p} OFFSET $${p + 1}`,
       [...params, filters.limit, offset],
     );
-
-    if (filters.cr_min || filters.cr_max) {
-      const minNum = filters.cr_min ? crToNumber(filters.cr_min) : 0;
-      const maxNum = filters.cr_max ? crToNumber(filters.cr_max) : 999;
-      rows = {
-        ...rows,
-        rows: rows.rows.filter((m) => {
-          const crNum = crToNumber(String((m as Record<string, unknown>)['challenge_rating'] ?? '0'));
-          return crNum >= minNum && crNum <= maxNum;
-        }),
-      };
-    }
 
     const countResult = await query(
       `SELECT COUNT(*) FROM monsters ${where}`,

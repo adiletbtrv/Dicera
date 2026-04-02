@@ -39,16 +39,11 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
     res.status(401).json({ error: 'Authentication required' });
     return;
   }
-
   const token = header.slice(7);
-  verifyToken(token)
-    .then((user) => {
-      req.user = user;
-      next();
-    })
-    .catch(() => {
-      res.status(401).json({ error: 'Invalid or expired token' });
-    });
+  verifyToken(token).then(
+    (user) => { req.user = user; next(); },
+    () => { res.status(401).json({ error: 'Invalid or expired token' }); }
+  );
 }
 
 export function requireRole(role: string) {

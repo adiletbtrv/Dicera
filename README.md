@@ -133,10 +133,11 @@ Both the frontend (`localhost:5173`) and backend (`localhost:3000`) start concur
 
 The `/apps/web` client is pre-configured for **Vercel** and **Netlify** with a `vercel.json` SPA routing config — browser refreshes on deep routes like `/characters/123` or `/spells/fireball` resolve correctly without 404s.
 
-For production, update `VITE_API_URL` in your hosting provider's environment variables to point to your deployed Node/Express API.
+For production, update `VITE_API_URL` and `API_BASE_URL` in your hosting provider's environment variables to point to your deployed Node/Express API.
 
 ```
 VITE_API_URL="https://api.your-dicera-instance.com/api"
+API_BASE_URL="https://api.your-dicera-instance.com"
 ```
 
 > **Note:** Your Express + PostgreSQL backend needs a persistent host (Railway, Render, Fly.io, or a VPS). Vercel's serverless functions are stateless and incompatible with Prisma's connection pooling at scale.

@@ -13,3 +13,7 @@ export const logger = pino({
       }
     : undefined,
 } as any);
+
+export function createRequestLogger(requestId: string) {
+  return logger.child({ requestId });
+}

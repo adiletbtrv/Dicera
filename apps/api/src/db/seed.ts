@@ -4,6 +4,7 @@ import { PoolClient } from 'pg';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { pool, transaction } from './client.js';
+import type { Spell, Monster, DndClass, Race, Background, Item, Feat } from '@dnd/data';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(__dirname, '../../../../packages/data/output');
@@ -36,7 +37,7 @@ async function seedSpells() {
   console.log(`Seeding ${spells.length} spells...`);
   
   await transaction(async (client) => {
-    const rows = spells.map((s: any) => [
+    const rows = spells.map((s: Spell) => [
       s.id, s.name, s.level, s.school, s.casting_time, s.range, JSON.stringify(s.components), s.duration,
       s.concentration, s.ritual, s.description, s.higher_levels || null, s.classes || [], 
       s.subclasses || [], s.source, s.page || null, s.tags || []
@@ -53,7 +54,7 @@ async function seedMonsters() {
   console.log(`Seeding ${monsters.length} monsters...`);
   
   await transaction(async (client) => {
-    const rows = monsters.map((m: any) => [
+    const rows = monsters.map((m: Monster) => [
       m.id, m.name, m.size, m.type, m.subtype || null, m.alignment || null, m.armor_class, m.armor_desc || null, 
       m.hit_points, m.hit_dice, JSON.stringify(m.speed), JSON.stringify(m.ability_scores), 
       JSON.stringify(m.saving_throws || {}), JSON.stringify(m.skills || {}), m.damage_vulnerabilities || [], 
@@ -77,7 +78,7 @@ async function seedClasses() {
   console.log(`Seeding ${classes.length} classes...`);
   
   await transaction(async (client) => {
-    const classRows = classes.map((c: any) => [
+    const classRows = classes.map((c: DndClass) => [
       c.id, c.name, c.hit_die, c.description, c.primary_ability, c.saving_throw_proficiencies,
       c.armor_proficiencies || [], c.weapon_proficiencies || [], c.tool_proficiencies || [],
       JSON.stringify(c.skill_choices), c.starting_equipment || [], 
@@ -107,7 +108,7 @@ async function seedRaces() {
   console.log(`Seeding ${races.length} races...`);
   
   await transaction(async (client) => {
-    const rows = races.map((r: any) => [
+    const rows = races.map((r: Race) => [
       r.id, r.name, r.size, r.speed, JSON.stringify(r.ability_score_increases || {}),
       JSON.stringify(r.traits || []), JSON.stringify(r.subraces || []), r.languages || [],
       r.source, r.page || null
@@ -124,7 +125,7 @@ async function seedBackgrounds() {
   console.log(`Seeding ${backgrounds.length} backgrounds...`);
   
   await transaction(async (client) => {
-    const rows = backgrounds.map((b: any) => [
+    const rows = backgrounds.map((b: Background) => [
       b.id, b.name, b.description, b.skill_proficiencies, b.tool_proficiencies || [],
       b.languages || 0, b.starting_equipment || [], b.starting_gold || 0,
       b.feature_name, b.feature_description, b.personality_traits || [],
@@ -142,7 +143,7 @@ async function seedItems() {
   console.log(`Seeding ${items.length} items...`);
   
   await transaction(async (client) => {
-    const rows = items.map((i: any) => [
+    const rows = items.map((i: Item) => [
       i.id, i.name, i.category, i.rarity || 'common', i.requires_attunement || false,
       i.attunement_desc || null, i.weight || null, i.cost ? JSON.stringify(i.cost) : null,
       i.description, i.properties || [], i.damage ? JSON.stringify(i.damage) : null,
@@ -161,7 +162,7 @@ async function seedFeats() {
   console.log(`Seeding ${feats.length} feats...`);
   
   await transaction(async (client) => {
-    const rows = feats.map((f: any) => [
+    const rows = feats.map((f: Feat) => [
       f.id, f.name, f.prerequisite || null, f.description, f.source, f.page || null
     ]);
     const cols = ['id', 'name', 'prerequisite', 'description', 'source', 'page'];

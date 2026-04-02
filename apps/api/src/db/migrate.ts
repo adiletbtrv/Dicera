@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'fs';
+import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { pool } from './client.js';
@@ -34,7 +34,11 @@ export async function runMigrations(): Promise<void> {
     const { rows } = await client.query('SELECT version FROM schema_migrations ORDER BY version ASC');
     const applied = new Set(rows.map((r) => r.version as string));
 
-    const migrationsDir = join(__dirname, 'migrations');
+    let migrationsDir = join(__dirname, 'migrations');
+    if (!existsSync(migrationsDir)) {
+      migrationsDir = join(__dirname, '../../src/db/migrations');
+    }
+
     const files = readdirSync(migrationsDir).filter((f) => f.endsWith('.sql')).sort();
 
     for (const file of files) {

@@ -73,7 +73,7 @@ router.post('/register', async (req, res, next) => {
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    res.status(201).json({ userId: id });
+    res.status(201).json({ userId: id, token });
   } catch (err) {
     next(err);
   }
@@ -106,7 +106,7 @@ router.post('/login', async (req, res, next) => {
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    res.json({ userId: user.id });
+    res.json({ userId: user.id, token });
   } catch (err) {
     next(err);
   }

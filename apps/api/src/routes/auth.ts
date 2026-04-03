@@ -66,10 +66,12 @@ router.post('/register', async (req, res, next) => {
       role: 'user',
     });
 
+    const isProd = process.env.NODE_ENV === 'production';
+
     res.cookie('auth_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
@@ -99,10 +101,12 @@ router.post('/login', async (req, res, next) => {
       role: user.role,
     });
 
+    const isProd = process.env.NODE_ENV === 'production';
+
     res.cookie('auth_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });

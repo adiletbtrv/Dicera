@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS map_images (
+  map_id UUID PRIMARY KEY REFERENCES maps(id) ON DELETE CASCADE,
+  image_data BYTEA NOT NULL,
+  content_type TEXT NOT NULL
+);

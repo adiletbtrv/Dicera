@@ -1,7 +1,9 @@
 import express from 'express';
 import crypto from 'node:crypto';
+import path from 'path';
 import helmet from 'helmet';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { rateLimit } from 'express-rate-limit';
 import pinoHttp from 'pino-http';
 import { config } from './config.js';
@@ -32,6 +34,8 @@ app.use(helmet());
 app.use(cors({ origin: config.corsOrigin, credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
 app.use(pinoHttp({ logger, genReqId: () => crypto.randomUUID() }));
 
 const globalLimiter = rateLimit({

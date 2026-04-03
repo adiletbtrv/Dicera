@@ -14,7 +14,7 @@ const DiceRollSchema = z.object({
 });
 
 export const DICE_REGEX = /^(\d+)d(\d+)([+-]\d+)?$/i;
-export const MULTI_DICE_REGEX = /(\d+)d(\d+)/gi;
+export const MULTI_DICE_REGEX = /(\d+)d(\d+)/i;
 
 export interface RollResult {
   expression: string;
@@ -97,8 +97,6 @@ export function parseExpression(expr: string): RollResult {
     return parseSingleExpression(cleanExpr) ?? parseComplexExpression(cleanExpr);
   }
 
-  // Reset stateful regex /g flag
-  MULTI_DICE_REGEX.lastIndex = 0;
   if (MULTI_DICE_REGEX.test(cleanExpr)) {
     return parseComplexExpression(cleanExpr);
   }

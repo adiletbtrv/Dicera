@@ -64,7 +64,7 @@ router.patch('/users/:id', async (req, res, next) => {
 
     for (const [key, value] of Object.entries(updates)) {
       if (value !== undefined) {
-        setClauses.push(`${key} = $${p}`);
+        setClauses.push(`"${key}" = $${p}`);
         params.push(value);
         p++;
       }

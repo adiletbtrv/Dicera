@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -56,28 +56,26 @@ export function PageLoader() {
   );
 }
 
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, isLoading } = useAuthStore();
+  if (isLoading) return <PageLoader />;
+  if (!user) return <Navigate to="/login" />;
+  return <>{children}</>;
+};
+
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, isLoading } = useAuthStore();
+  if (isLoading) return <PageLoader />;
+  if (user?.role !== 'admin') return <Navigate to="/" />;
+  return <>{children}</>;
+};
+
 export default function App() {
-  const { user } = useAuthStore();
+  const { user, loadUser } = useAuthStore();
 
-  const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-    const { user, isLoading } = useAuthStore();
-    const token = localStorage.getItem('auth_token');
-    const isActuallyLoading = isLoading || (!user && token);
-    
-    if (isActuallyLoading) return <PageLoader />;
-    if (!user) return <Navigate to="/login" />;
-    return <>{children}</>;
-  };
-
-  const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-    const { user, isLoading } = useAuthStore();
-    const token = localStorage.getItem('auth_token');
-    const isActuallyLoading = isLoading || (!user && token);
-    
-    if (isActuallyLoading) return <PageLoader />;
-    if (user?.role !== 'admin') return <Navigate to="/" />;
-    return <>{children}</>;
-  };
+  useEffect(() => {
+    loadUser();
+  }, [loadUser]);
 
   return (
     <ErrorBoundary>

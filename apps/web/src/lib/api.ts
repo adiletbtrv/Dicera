@@ -1,22 +1,8 @@
 import { z } from 'zod';
 import { env } from '../env.js';
 const BASE_URL = env.VITE_API_URL;
+
 class ApiClient {
-  private token: string | null = null;
-
-  setToken(token: string | null) {
-    this.token = token;
-    if (token) {
-      localStorage.setItem('auth_token', token);
-    } else {
-      localStorage.removeItem('auth_token');
-    }
-  }
-
-  loadToken() {
-    this.token = localStorage.getItem('auth_token');
-  }
-
   private async request<T>(
     method: string,
     path: string,
@@ -33,18 +19,16 @@ class ApiClient {
       }
     }
 
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
+    const headers: Record<string, string> = {};
+    if (!(body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
     }
 
     const response = await fetch(url.toString(), {
       method,
       headers,
-      body: body !== undefined ? JSON.stringify(body) : null,
+      credentials: 'include',
+      body: body !== undefined && !(body instanceof FormData) ? JSON.stringify(body) : (body as BodyInit),
     });
 
     if (response.status === 204) return undefined as T;
@@ -89,4 +73,3 @@ export class ApiError extends Error {
 }
 
 export const api = new ApiClient();
-api.loadToken();

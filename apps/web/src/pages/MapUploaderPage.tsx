@@ -55,7 +55,7 @@ export function MapUploaderPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !preview) return;
+    if (!name.trim() || !preview || !file) return;
     setIsSubmitting(true);
     setError(null);
     try {
@@ -66,14 +66,19 @@ export function MapUploaderPage() {
         img.src = preview!;
       });
 
-      await api.post('/maps', {
-        name,
-        image_url: preview,
-        width_px: img.naturalWidth,
-        height_px: img.naturalHeight,
-        grid_size_px: 50,
-        grid_enabled: true,
-      });
+      // Convert local DataURL preview into a Blob
+      const resBlob = await fetch(preview);
+      const blob = await resBlob.blob();
+
+      const formData = new FormData();
+      formData.append('image', blob, file.name.replace(/\.[^/.]+$/, "") + '.webp');
+      formData.append('name', name);
+      formData.append('width_px', img.naturalWidth.toString());
+      formData.append('height_px', img.naturalHeight.toString());
+      formData.append('grid_size_px', '50');
+      formData.append('grid_enabled', 'true');
+
+      await api.post('/maps', formData);
       navigate('/maps');
     } catch (err: any) {
       setError(err?.message || 'Failed to save map');

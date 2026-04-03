@@ -12,8 +12,8 @@ export default defineConfig({
       reporter: ['text', 'lcov'],
       exclude: ['src/db/seed.ts', 'src/db/migrate.ts', 'src/db/fix.ts', 'src/server.ts'],
       thresholds: {
-        lines: 60,
-        functions: 60,
+        lines: 80,
+        functions: 80,
       },
     },
   },

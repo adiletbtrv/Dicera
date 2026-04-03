@@ -34,12 +34,11 @@ export async function verifyToken(token: string): Promise<AuthUser> {
 }
 
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
-  const header = req.headers.authorization;
-  if (!header?.startsWith('Bearer ')) {
+  const token = req.cookies?.auth_token || req.headers.authorization?.slice(7);
+  if (!token) {
     res.status(401).json({ error: 'Authentication required' });
     return;
   }
-  const token = header.slice(7);
   verifyToken(token).then(
     (user) => { req.user = user; next(); },
     () => { res.status(401).json({ error: 'Invalid or expired token' }); }
@@ -61,13 +60,11 @@ export function requireRole(role: string) {
 }
 
 export function optionalAuth(req: Request, _res: Response, next: NextFunction): void {
-  const header = req.headers.authorization;
-  if (!header?.startsWith('Bearer ')) {
+  const token = req.cookies?.auth_token || req.headers.authorization?.slice(7);
+  if (!token) {
     next();
     return;
   }
-
-  const token = header.slice(7);
   verifyToken(token)
     .then((user) => {
       req.user = user;

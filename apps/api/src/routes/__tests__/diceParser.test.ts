@@ -43,7 +43,7 @@ describe('Dice Parser', () => {
         ),
         (diceArr) => {
           const expr = diceArr.map(([c, s]) => `${c}d${s}`).join('+');
-          const matches = [...expr.matchAll(MULTI_DICE_REGEX)];
+          const matches = [...expr.matchAll(new RegExp(MULTI_DICE_REGEX, 'gi'))];
           expect(matches.length).toBe(diceArr.length);
         }
       )

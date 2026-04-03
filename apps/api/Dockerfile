@@ -21,10 +21,11 @@ WORKDIR /app
 
 # Only copy production dependencies
 COPY package.json package-lock.json ./
-COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/apps/api/package.json ./apps/api/
 COPY --from=builder /app/packages/data/package.json ./packages/data/
 COPY --from=builder /app/packages/ai/package.json ./packages/ai/
+
+RUN npm ci --omit=dev
 
 # Copy built code
 COPY --from=builder /app/apps/api/dist ./apps/api/dist

@@ -66,7 +66,14 @@ router.post('/register', async (req, res, next) => {
       role: 'user',
     });
 
-    res.status(201).json({ token, userId: id });
+    res.cookie('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+    res.status(201).json({ userId: id });
   } catch (err) {
     next(err);
   }
@@ -92,7 +99,14 @@ router.post('/login', async (req, res, next) => {
       role: user.role,
     });
 
-    res.json({ token, userId: user.id });
+    res.cookie('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+    res.json({ userId: user.id });
   } catch (err) {
     next(err);
   }
@@ -111,6 +125,11 @@ router.get('/me', requireAuth, async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+});
+
+router.post('/logout', (req, res) => {
+  res.clearCookie('auth_token');
+  res.json({ success: true });
 });
 
 export { router as authRouter };

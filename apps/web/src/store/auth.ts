@@ -20,16 +20,12 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  isLoading: false,
+  isLoading: true,
 
   login: async (email, password) => {
     set({ isLoading: true });
     try {
-      const { token } = await api.post<{ token: string; userId: string }>('/auth/login', {
-        email,
-        password,
-      });
-      api.setToken(token);
+      await api.post('/auth/login', { email, password });
       const user = await api.get<AuthUser>('/auth/me');
       set({ user, isLoading: false });
     } catch (err) {
@@ -41,12 +37,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   register: async (email, username, password) => {
     set({ isLoading: true });
     try {
-      const { token } = await api.post<{ token: string; userId: string }>('/auth/register', {
-        email,
-        username,
-        password,
-      });
-      api.setToken(token);
+      await api.post('/auth/register', { email, username, password });
       const user = await api.get<AuthUser>('/auth/me');
       set({ user, isLoading: false });
     } catch (err) {
@@ -55,21 +46,19 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  logout: () => {
-    api.setToken(null);
+  logout: async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch { /* ignore */ }
     set({ user: null });
   },
 
   loadUser: async () => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) return;
-
     set({ isLoading: true });
     try {
       const user = await api.get<AuthUser>('/auth/me');
       set({ user, isLoading: false });
     } catch {
-      api.setToken(null);
       set({ user: null, isLoading: false });
     }
   },

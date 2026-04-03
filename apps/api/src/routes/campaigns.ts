@@ -152,7 +152,7 @@ router.patch('/:id', requireAuth, async (req, res, next) => {
     const ALLOWED = new Set(['name', 'description', 'setting', 'system', 'dm_notes', 'is_public']);
     for (const [key, value] of Object.entries(body)) {
       if (value !== undefined && ALLOWED.has(key)) {
-        setClauses.push(`${key} = $${p}`);
+        setClauses.push(`"${key}" = $${p}`);
         params.push(value);
         p++;
       }
@@ -227,7 +227,7 @@ router.patch('/:id/npcs/:npcId', requireAuth, async (req, res, next) => {
     const ALLOWED_NPC = new Set(['name', 'race', 'occupation', 'location_id', 'alignment', 'description', 'personality', 'motivations', 'secrets', 'notes', 'tags', 'is_alive']);
     for (const [key, value] of Object.entries(body)) {
       if (value !== undefined && ALLOWED_NPC.has(key)) { 
-        setClauses.push(`${key} = $${p}`); 
+        setClauses.push(`"${key}" = $${p}`); 
         params.push(value); 
         p++; 
       }
